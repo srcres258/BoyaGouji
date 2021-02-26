@@ -52,7 +52,7 @@ public class MenuView extends SurfaceView implements SurfaceHolder.Callback, OnT
 				try {
 					canvas = holder.lockCanvas();
 					synchronized (this) {
-						onDraw(canvas);
+						doDraw(canvas);
 					}
 					// System.out.println("menuThread");
 				} finally {
@@ -68,10 +68,8 @@ public class MenuView extends SurfaceView implements SurfaceHolder.Callback, OnT
 
 	};
 
-	@SuppressLint("DrawAllocation")
-	@Override
-	protected void onDraw(Canvas canvas) {
-
+	private void doDraw(Canvas canvas) {
+		super.draw(canvas);
 		Rect src = new Rect();
 		Rect des = new Rect();
 		src.set(0, 0, background.getWidth(), background.getHeight());

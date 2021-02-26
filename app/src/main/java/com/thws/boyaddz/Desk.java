@@ -17,6 +17,8 @@ import com.blankj.utilcode.util.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Desk {
     public static int winId = -1;
@@ -59,6 +61,7 @@ public class Desk {
     public boolean ifClickChupai = false;
     public boolean biesanMode = true;
     private ArrayList<Integer> beimenPlayerIds = new ArrayList<>();
+    private ReentrantLock dataLock = new ReentrantLock();
 
     public Desk(Context context) {
         this.context = context;
@@ -69,6 +72,10 @@ public class Desk {
         farmerImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.icon_farmer);
         landlordImage = BitmapFactory.decodeResource(context.getResources(),
                 R.drawable.icon_landlord);
+    }
+
+    public Lock getDataLock() {
+        return dataLock;
     }
 
     public void gameLogic() {
@@ -569,6 +576,7 @@ public class Desk {
         paint.setStrokeWidth(1);
         paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
         for (int i = 0; i < 3; i++) {
+            dataLock.lock();
             int row = CardsManager.getImageRow(threeCards[i]);
             int col = CardsManager.getImageCol(threeCards[i]);
             Bitmap image = BitmapFactory.decodeResource(context.getResources(),

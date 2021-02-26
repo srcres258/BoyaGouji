@@ -27,13 +27,26 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 		public void run() {
 			holder = getHolder();
 			while (threadFlag) {
-				desk.gameLogic();
 				try {
 					canvas = holder.lockCanvas();
-					onDraw(canvas);
+					doDraw(canvas);
 				} finally {
 					holder.unlockCanvasAndPost(canvas);
 				}
+				try {
+					Thread.sleep(20);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+	};
+	Thread gameLogicThread = new Thread() {
+		@Override
+		public void run() {
+			while (threadFlag) {
+				desk.gameLogic();
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {
@@ -41,7 +54,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 				}
 			}
 		}
-
 	};
 
 	public GameView(Context context) {
@@ -52,9 +64,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 		this.getHolder().addCallback(this);
 		this.setOnTouchListener(this);
 	}
-	@SuppressLint("DrawAllocation")
-	@Override
-	protected void onDraw(Canvas canvas) {
+
+	private void doDraw(Canvas canvas) {
 		Rect src = new Rect();
 		Rect des = new Rect();
 		src.set(0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight());
@@ -72,7 +83,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 	public void surfaceCreated(SurfaceHolder holder) {
 		threadFlag = true;
 		gameThread.start();
-
+		gameLogicThread.start();
 	}
 
 	@Override

@@ -15,6 +15,8 @@ import android.graphics.RectF;
 
 import com.blankj.utilcode.util.ToastUtils;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Player {
 
 	int[] cards;
@@ -44,6 +46,8 @@ public class Player {
 	private Player last;
 	private Player next;
 
+	private ReentrantLock dataLock = new ReentrantLock();
+
 	public Player(int[] cards, int left, int top, int paintDir, int id, Desk desk, Context context) {
 		this.desk = desk;
 		this.playerId = id;
@@ -65,7 +69,7 @@ public class Player {
 	}
 
 	public void paint(Canvas canvas) {
-		System.out.println("id:" + playerId);
+//		System.out.println("id:" + playerId);
 		Rect src = new Rect();
 		Rect des = new Rect();
 
@@ -93,10 +97,14 @@ public class Player {
 			paint.setStyle(Style.FILL);
 			paint.setColor(Color.WHITE);
 			paint.setTextSize((int) (20 * MainActivity.SCALE_HORIAONTAL));
-//			if (!desk.biesanMode)
-				canvas.drawText("" + cards.length, (int) (left * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top + 80) * MainActivity.SCALE_VERTICAL), paint);
-
+			try {
+				dataLock.lock();
+//				if (!desk.biesanMode)
+					canvas.drawText("" + cards.length, (int) (left * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top + 80) * MainActivity.SCALE_VERTICAL), paint);
+			} finally {
+				dataLock.unlock();
+			}
 		}
 		else {
 			Paint paint = new Paint();
@@ -105,14 +113,21 @@ public class Player {
 			paint.setStrokeWidth(1);
 			paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
 			for (int i = 0; i < cards.length; i++) {
-				row = CardsManager.getImageRow(cards[i]);
-				col = CardsManager.getImageCol(cards[i]);
+				try {
+					dataLock.lock();
+					row = CardsManager.getImageRow(cards[i]);
+					col = CardsManager.getImageCol(cards[i]);
+				} finally {
+					dataLock.unlock();
+				}
 				cardImage = BitmapFactory.decodeResource(context.getResources(),
 						CardImage.cardImages[row][col]);
 				int select = 0;
+				dataLock.lock();
 				if (cardsFlag[i]) {
 					select = 10;
 				}
+				dataLock.unlock();
 				src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
 				des.set((int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
 						(int) ((top - select) * MainActivity.SCALE_VERTICAL),
