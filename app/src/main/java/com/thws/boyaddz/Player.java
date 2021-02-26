@@ -16,6 +16,8 @@ import android.graphics.RectF;
 import com.blankj.utilcode.util.ToastUtils;
 
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Player {
 
@@ -69,6 +71,16 @@ public class Player {
 	}
 
 	public void paint(Canvas canvas) {
+		Function<Integer, Boolean> cardsFlagF = (i) -> {
+			boolean ret;
+			try {
+				dataLock.lock();
+				ret = cardsFlag[i];
+			} finally {
+				dataLock.unlock();
+			}
+			return ret;
+		};
 //		System.out.println("id:" + playerId);
 		Rect src = new Rect();
 		Rect des = new Rect();
@@ -112,30 +124,35 @@ public class Player {
 			paint.setColor(Color.BLACK);
 			paint.setStrokeWidth(1);
 			paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-			for (int i = 0; i < cards.length; i++) {
-				try {
-					dataLock.lock();
-					row = CardsManager.getImageRow(cards[i]);
-					col = CardsManager.getImageCol(cards[i]);
-				} finally {
-					dataLock.unlock();
-				}
-				cardImage = BitmapFactory.decodeResource(context.getResources(),
-						CardImage.cardImages[row][col]);
-				int select = 0;
+			try {
 				dataLock.lock();
-				if (cardsFlag[i]) {
-					select = 10;
+				for (int i = 0; i < cards.length; i++) {
+					try {
+						dataLock.lock();
+						row = CardsManager.getImageRow(cards[i]);
+						col = CardsManager.getImageCol(cards[i]);
+					} finally {
+						dataLock.unlock();
+					}
+					cardImage = BitmapFactory.decodeResource(context.getResources(),
+							CardImage.cardImages[row][col]);
+					int select = 0;
+					dataLock.lock();
+					if (cardsFlagF.apply(i)) {
+						select = 10;
+					}
+					dataLock.unlock();
+					src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
+					des.set((int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top - select) * MainActivity.SCALE_VERTICAL),
+							(int) ((left + 40 + i * 20) * MainActivity.SCALE_HORIAONTAL), (int) ((top
+									- select + 60) * MainActivity.SCALE_VERTICAL));
+					RectF rectF = new RectF(des);
+					canvas.drawRoundRect(rectF, 5, 5, paint);
+					canvas.drawBitmap(cardImage, src, des, paint);
 				}
+			} finally {
 				dataLock.unlock();
-				src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
-				des.set((int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top - select) * MainActivity.SCALE_VERTICAL),
-						(int) ((left + 40 + i * 20) * MainActivity.SCALE_HORIAONTAL), (int) ((top
-								- select + 60) * MainActivity.SCALE_VERTICAL));
-				RectF rectF = new RectF(des);
-				canvas.drawRoundRect(rectF, 5, 5, paint);
-				canvas.drawBitmap(cardImage, src, des, paint);
 			}
 		}
 
@@ -146,39 +163,59 @@ public class Player {
 		Rect des = new Rect();
 		int row;
 		int col;
-
-		for (int i = 0; i < cards.length; i++) {
-			row = CardsManager.getImageRow(cards[i]);
-			col = CardsManager.getImageCol(cards[i]);
-			cardImage = BitmapFactory.decodeResource(context.getResources(),
-					CardImage.cardImages[row][col]);
-			Paint paint = new Paint();
-			paint.setStyle(Style.STROKE);
-			paint.setColor(Color.BLACK);
-			paint.setStrokeWidth(1);
-			paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-			if (paintDirection == CardsType.direction_Vertical) {
-				src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
-				des.set((int) (left * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top - 40 + i * 15) * MainActivity.SCALE_VERTICAL),
-						(int) ((left + 40) * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top + 20 + i * 15) * MainActivity.SCALE_VERTICAL));
-				RectF rectF = new RectF(des);
-				canvas.drawRoundRect(rectF, 5, 5, paint);
-				canvas.drawBitmap(cardImage, src, des, paint);
-
+		Supplier<Integer> getLen = () -> {
+			int ret;
+			try {
+				dataLock.lock();
+				ret = cards.length;
+			} finally {
+				dataLock.unlock();
 			}
-			else {
-				src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
-				des.set((int) ((left + 40 + i * 20) * MainActivity.SCALE_HORIAONTAL),
-						(int) (top * MainActivity.SCALE_VERTICAL),
-						(int) ((left + 80 + i * 20) * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top + 60) * MainActivity.SCALE_VERTICAL));
-				RectF rectF = new RectF(des);
-				canvas.drawRoundRect(rectF, 5, 5, paint);
-				canvas.drawBitmap(cardImage, src, des, paint);
+			return ret;
+		};
 
+		try {
+			dataLock.lock();
+			for (int i = 0; i < getLen.get(); i++) {
+				try {
+					dataLock.lock();
+					row = CardsManager.getImageRow(cards[i]);
+					col = CardsManager.getImageCol(cards[i]);
+				} finally {
+					dataLock.unlock();
+				}
+				cardImage = BitmapFactory.decodeResource(context.getResources(),
+						CardImage.cardImages[row][col]);
+				Paint paint = new Paint();
+				paint.setStyle(Style.STROKE);
+				paint.setColor(Color.BLACK);
+				paint.setStrokeWidth(1);
+				paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
+				if (paintDirection == CardsType.direction_Vertical) {
+					src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
+					des.set((int) (left * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top - 40 + i * 15) * MainActivity.SCALE_VERTICAL),
+							(int) ((left + 40) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top + 20 + i * 15) * MainActivity.SCALE_VERTICAL));
+					RectF rectF = new RectF(des);
+					canvas.drawRoundRect(rectF, 5, 5, paint);
+					canvas.drawBitmap(cardImage, src, des, paint);
+
+				}
+				else {
+					src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
+					des.set((int) ((left + 40 + i * 20) * MainActivity.SCALE_HORIAONTAL),
+							(int) (top * MainActivity.SCALE_VERTICAL),
+							(int) ((left + 80 + i * 20) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top + 60) * MainActivity.SCALE_VERTICAL));
+					RectF rectF = new RectF(des);
+					canvas.drawRoundRect(rectF, 5, 5, paint);
+					canvas.drawBitmap(cardImage, src, des, paint);
+
+				}
 			}
+		} finally {
+			dataLock.unlock();
 		}
 	}
 
@@ -236,23 +273,43 @@ public class Player {
 	@SuppressLint("ShowToast")
 	public CardsHolder chupai(CardsHolder card) {
 		int count = 0;
-		for (int i = 0; i < cards.length; i++) {
-			if (cardsFlag[i]) {
-				count++;
-				System.out.println("���ƣ�" + String.valueOf(CardsManager.getCardNumber(cards[i])));
-				if (desk.biesanMode && CardsManager.getCardNumber(cards[i]) == 3) {
-					MainActivity.handler.sendEmptyMessage(MainActivity.SAN_CARD);
-					return null;
+		Function<Integer, Boolean> cardsFlagF = (i) -> {
+			boolean ret;
+			try {
+				dataLock.lock();
+				ret = cardsFlag[i];
+			} finally {
+				dataLock.unlock();
+			}
+			return ret;
+		};
+		try {
+			dataLock.lock();
+			for (int i = 0; i < cards.length; i++) {
+				if (cardsFlagF.apply(i)) {
+					count++;
+					System.out.println("���ƣ�" + String.valueOf(CardsManager.getCardNumber(cards[i])));
+					if (desk.biesanMode && CardsManager.getCardNumber(cards[i]) == 3) {
+						MainActivity.handler.sendEmptyMessage(MainActivity.SAN_CARD);
+						return null;
+					}
 				}
 			}
+		} finally {
+			dataLock.unlock();
 		}
 		int[] chupaiPokes = new int[count];
 		int j = 0;
-		for (int i = 0; i < cards.length; i++) {
-			if (cardsFlag[i]) {
-				chupaiPokes[j] = cards[i];
-				j++;
+		try {
+			dataLock.lock();
+			for (int i = 0; i < cards.length; i++) {
+				if (cardsFlagF.apply(i)) {
+					chupaiPokes[j] = cards[i];
+					j++;
+				}
 			}
+		} finally {
+			dataLock.unlock();
 		}
 		int cardType = CardsManager.getType(chupaiPokes);
 		System.out.println("cardType:" + cardType);
@@ -273,14 +330,19 @@ public class Player {
 			int[] newPokes = new int[cards.length - count];
 			int k = 0;
 			for (int i = 0; i < cards.length; i++) {
-				if (!cardsFlag[i]) {
+				if (!cardsFlagF.apply(i)) {
 					newPokes[k] = cards[i];
 					k++;
 				}
 
 			}
 			this.cards = newPokes;
-			this.cardsFlag = new boolean[cards.length];
+			try {
+				dataLock.lock();
+				this.cardsFlag = new boolean[cards.length];
+			} finally {
+				dataLock.unlock();
+			}
 		}
 		else {
 
@@ -291,7 +353,7 @@ public class Player {
 				int[] newPokes = new int[cards.length - count];
 				int ni = 0;
 				for (int i = 0; i < cards.length; i++) {
-					if (!cardsFlag[i]) {
+					if (!cardsFlagF.apply(i)) {
 						newPokes[ni] = cards[i];
 						ni++;
 					}
@@ -312,30 +374,33 @@ public class Player {
 	}
 
 	public void onTuch(int x, int y) {
-
-		for (int i = 0; i < cards.length; i++) {
-			// �ж��������Ʊ�ѡ�У����ñ�־
-			if (i != cards.length - 1) {
-				if (CardsManager.inRect(x, y,
-						(int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
-						(int) (20 * MainActivity.SCALE_HORIAONTAL),
-						(int) (60 * MainActivity.SCALE_VERTICAL))) {
-					cardsFlag[i] = !cardsFlag[i];
-					break;
+		try {
+			dataLock.lock();
+			for (int i = 0; i < cards.length; i++) {
+				// �ж��������Ʊ�ѡ�У����ñ�־
+				if (i != cards.length - 1) {
+					if (CardsManager.inRect(x, y,
+							(int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
+							(int) (20 * MainActivity.SCALE_HORIAONTAL),
+							(int) (60 * MainActivity.SCALE_VERTICAL))) {
+						cardsFlag[i] = !cardsFlag[i];
+						break;
+					}
+				} else {
+					if (CardsManager.inRect(x, y,
+							(int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
+							(int) (40 * MainActivity.SCALE_HORIAONTAL),
+							(int) (60 * MainActivity.SCALE_VERTICAL))) {
+						cardsFlag[i] = !cardsFlag[i];
+						break;
+					}
 				}
-			}
-			else {
-				if (CardsManager.inRect(x, y,
-						(int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
-						(int) (40 * MainActivity.SCALE_HORIAONTAL),
-						(int) (60 * MainActivity.SCALE_VERTICAL))) {
-					cardsFlag[i] = !cardsFlag[i];
-					break;
-				}
-			}
 
+			}
+		} finally {
+			dataLock.unlock();
 		}
 	}
 

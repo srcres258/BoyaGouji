@@ -30,6 +30,7 @@ public class Desk {
     Bitmap farmerImage;
     Bitmap landlordImage;
     Context context;
+    GameView gv;
     private int[] scores = new int[3];
     private int[] threeCards = new int[3];
     private int[][] threeCardsPosition = {{170, 10}, {220, 10}, {270, 10}};
@@ -63,8 +64,9 @@ public class Desk {
     private ArrayList<Integer> beimenPlayerIds = new ArrayList<>();
     private ReentrantLock dataLock = new ReentrantLock();
 
-    public Desk(Context context) {
+    public Desk(Context context, GameView gv) {
         this.context = context;
+        this.gv = gv;
         redoImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.btn_redo);
         passImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.btn_pass);
         chuPaiImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.btn_chupai);
@@ -118,6 +120,14 @@ public class Desk {
         for (int i : lastPlayer.cards)
             res &= i < 4;
         return res;
+    }
+
+    private void submitMenAnimation(int srcId, int destId) {
+        MenAnimation anim = new MenAnimation(context, (int) (iconPosition[srcId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[srcId][1] * MainActivity.SCALE_VERTICAL),
+                (int) (iconPosition[destId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[destId][1] * MainActivity.SCALE_VERTICAL));
+        gv.submitAnimation(anim);
     }
 
     private void calculateResult() {
@@ -202,6 +212,7 @@ public class Desk {
 				if (tempcard != null) {
                     if (cardsOnDesktop != null && judgeBeimen(players[cardsOnDesktop.playerId])) {
                         beimenPlayerIds.add(cardsOnDesktop.playerId);
+                        submitMenAnimation(currentId, cardsOnDesktop.playerId);
                         SoundManager.playMenSound();
                     }
 					cardsOnDesktop = tempcard;
@@ -219,12 +230,13 @@ public class Desk {
 //            }
 //            buyao();
         } else {
-            if (timeLimite <= 300 && timeLimite >= 0) {
+//            if (timeLimite <= 300 && timeLimite >= 0) {
                 if (ifClickChupai == true) {
                     CardsHolder card = players[0].chupai(cardsOnDesktop);
                     if (card != null) {
                         if (cardsOnDesktop != null && judgeBeimen(players[cardsOnDesktop.playerId])) {
                             beimenPlayerIds.add(cardsOnDesktop.playerId);
+                            submitMenAnimation(currentId, cardsOnDesktop.playerId);
                             SoundManager.playMenSound();
                         }
                         cardsOnDesktop = card;
@@ -234,18 +246,18 @@ public class Desk {
                     ifClickChupai = false;
                 }
 
-            } else {
-                if (currentCircle != 0) {
-                    buyao();
-                } else {
-                    CardsHolder autoCard = players[currentId].chupaiAI(cardsOnDesktop);
-                    cardsOnDesktop = autoCard;
-                    cardsOnDesktop.playSound();
-                    nextPerson();
-
-                }
-
-            }
+//            } else {
+//                if (currentCircle != 0) {
+//                    buyao();
+//                } else {
+//                    CardsHolder autoCard = players[currentId].chupaiAI(cardsOnDesktop);
+//                    cardsOnDesktop = autoCard;
+//                    cardsOnDesktop.playSound();
+//                    nextPerson();
+//
+//                }
+//
+//            }
 
         }
         timeLimite -= 2;
