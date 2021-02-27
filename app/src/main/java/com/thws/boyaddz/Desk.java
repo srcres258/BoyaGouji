@@ -122,6 +122,21 @@ public class Desk {
         return res;
     }
 
+    private void submitMaisanAnimation(int buyerId, int sellerId, int usingCard, int sanCard) {
+        GiveCardAnimation a1 = new GiveCardAnimation(context, usingCard,
+                (int) (iconPosition[buyerId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[buyerId][1] * MainActivity.SCALE_VERTICAL),
+                (int) (iconPosition[sellerId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[sellerId][1] * MainActivity.SCALE_VERTICAL));
+        GiveCardAnimation a2 = new GiveCardAnimation(context, sanCard,
+                (int) (iconPosition[sellerId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[sellerId][1] * MainActivity.SCALE_VERTICAL),
+                (int) (iconPosition[buyerId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[buyerId][1] * MainActivity.SCALE_VERTICAL));
+        gv.submitAnimation(a1);
+        gv.submitAnimation(a2);
+    }
+
     private void submitMenAnimation(int srcId, int destId) {
         MenAnimation anim = new MenAnimation(context, (int) (iconPosition[srcId][0] * MainActivity.SCALE_HORIAONTAL),
                 (int) (iconPosition[srcId][1] * MainActivity.SCALE_VERTICAL),
@@ -345,6 +360,7 @@ public class Desk {
         playerCards[id][0] = c1;
         CardsManager.sort(playerCards[id]);
         CardsManager.sort(playerCards[targetId]);
+        submitMaisanAnimation(id, targetId, c2, c1);
         ToastUtils.showLong(String.format(Locale.getDefault(), "玩家%d用%s向玩家%d买了1张3",
                 id, CardsManager.getCardString(CardsManager.getCardNumber(c2)), targetId));
     }
