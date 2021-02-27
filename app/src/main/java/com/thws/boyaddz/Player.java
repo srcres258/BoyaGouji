@@ -13,6 +13,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
+import com.blankj.utilcode.util.ArrayUtils;
 import com.blankj.utilcode.util.ToastUtils;
 
 import java.util.concurrent.locks.Lock;
@@ -45,6 +46,8 @@ public class Player {
 
 	int paintDirection = CardsType.direction_Vertical;
 	Bitmap cardImage;
+
+	boolean dianFlag = false;
 
 	private Player last;
 	private Player next;
@@ -229,6 +232,33 @@ public class Player {
 		}
 	}
 
+	private int[] outCardDian() {
+		try {
+			dataLock.lock();
+			int[] result = new int[0];
+			for (int card : cards) {
+				if (CardsManager.getCardNumber(card) == 4)
+					result = ArrayUtils.add(result, card);
+			}
+			return result;
+		} finally {
+			dataLock.unlock();
+		}
+	}
+
+	private boolean judgeQidian() {
+		try {
+			dataLock.lock();
+			for (int card : cards) {
+				if (CardsManager.getCardNumber(card) > 4)
+					return false;
+			}
+		} finally {
+			dataLock.unlock();
+		}
+		return true;
+	}
+
 	public CardsHolder chupaiAI(CardsHolder card) {
 		try {
 			Thread.sleep(1000);
@@ -239,7 +269,10 @@ public class Player {
 		int[] pokeWanted = null;
 
 		if (card == null) {
-			pokeWanted = CardsManager.outCardByItsself(cards, last, next);
+			if (dianFlag || judgeQidian())
+				pokeWanted = outCardDian();
+			else
+				pokeWanted = CardsManager.outCardByItsself(cards, last, next);
 		}
 		else {
 			pokeWanted = CardsManager.findTheRightCard(card, cards, last, next);
@@ -271,6 +304,13 @@ public class Player {
 		// �����������һ����
 //		Desk.cardsOnDesktop = thiscard;
 		this.latestCards = thiscard;
+		for (int c : pokeWanted) {
+			if (CardsManager.getCardNumber(c) == 4 && dianFlag) {
+				desk.setDian(playerId);
+				break;
+			}
+		}
+		dianFlag = false;
 		return thiscard;
 	}
 
@@ -380,6 +420,13 @@ public class Player {
 				return null;
 			}
 		}
+		for (int c : chupaiPokes) {
+			if (CardsManager.getCardNumber(c) == 4 && dianFlag) {
+				desk.setDian(playerId);
+				break;
+			}
+		}
+		dianFlag = false;
 		return newLatestCardsHolder;
 	}
 

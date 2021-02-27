@@ -241,6 +241,16 @@ public class CardsManager {
     public static int getType(int[] cards) {
         int len = cards.length;
 
+        boolean has4 = false, all4 = true;
+        for (int card : cards) {
+            if (getCardNumber(card) == 4)
+                has4 = true;
+            all4 &= getCardNumber(card) == 4;
+        }
+        if (has4 && !all4) {
+            return CardsType.error;
+        }
+
         if (len == 1) {
             return CardsType.danpai;
         }

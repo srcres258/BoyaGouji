@@ -21,6 +21,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Desk {
+    static class DianReport {
+        int id = -1;
+        boolean dian = false;
+    }
     static class MenReport {
         int menId = -1;
         int beimenId = -1;
@@ -70,6 +74,7 @@ public class Desk {
     private ReentrantLock dataLock = new ReentrantLock();
     private boolean gongCompleted = false;
     private boolean shouldPaintButtons = false;
+    private LinkedList<DianReport> dianReportList = new LinkedList<>();
     private LinkedList<MenReport> menReportList = new LinkedList<>();
     private CharSequence gongText = "";
 
@@ -99,6 +104,7 @@ public class Desk {
                 if (biesanMode && !gongCompleted) {
                     shouldPaintButtons = false;
                     maisan();
+                    maisi();
                     jingong();
                     gongCompleted = true;
                     shouldPaintButtons = true;
@@ -138,7 +144,7 @@ public class Desk {
         return res;
     }
 
-    private void submitMaisanAnimation(int buyerId, int sellerId, int usingCard, int sanCard) {
+    private void submitMaiAnimation(int buyerId, int sellerId, int usingCard, int sanCard) {
         GiveCardAnimation a1 = new GiveCardAnimation(context, usingCard,
                 (int) (iconPosition[buyerId][0] * MainActivity.SCALE_HORIAONTAL),
                 (int) (iconPosition[buyerId][1] * MainActivity.SCALE_VERTICAL),
@@ -315,6 +321,14 @@ public class Desk {
 
     }
 
+    public void setDian(int playerId) {
+        for (DianReport report : dianReportList) {
+            if (report.id == playerId)
+                report.dian = true;
+        }
+        Log.i("BoYaDDZ", playerId + " kaidian");
+    }
+
     public void init() {
         allCards = new int[54];
         playerCards = new int[3][17];
@@ -407,12 +421,94 @@ public class Desk {
 //        } finally {
 //            players[id].getDataLock().unlock();
 //        }
-        submitMaisanAnimation(id, targetId, c2, c1);
+        submitMaiAnimation(id, targetId, c2, c1);
+//        ToastUtils.showLong(String.format(Locale.getDefault(), "玩家%d用%s向玩家%d买了1张3",
+//                id, CardsManager.getCardString(CardsManager.getCardNumber(c2)), targetId));
+    }
+
+    private void maisi() {
+        gongText = "等待玩家买4";
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < 3; i++) {
+            int siAmount = 0;
+            for (int c : playerCards[i]) {
+                if (CardsManager.getCardNumber(c) == 4)
+                    siAmount++;
+            }
+            if (siAmount == 0)
+                maisiFor(i);
+        }
+    }
+
+    private void maisiFor(int id) {
+        Log.i("BoYaDDZ", "maisi: " + id);
+        int targetId = -1;
+        for (int i = 0; i < 3; i++) {
+            if (id == i)
+                continue;
+            int siAmount = 0;
+            for (int c : playerCards[i]) {
+                if (CardsManager.getCardNumber(c) == 4)
+                    siAmount++;
+            }
+            if (siAmount > 1) {
+                targetId = i;
+                break;
+            }
+        }
+        int index = -1;
+        for (int i = 0; i < playerCards[targetId].length; i++) {
+            if (CardsManager.getCardNumber(playerCards[targetId][i]) == 4) {
+                index = i;
+                break;
+            }
+        }
+        // Swap cards and then resort.
+        int c1 = playerCards[targetId][index];
+        int c2 = playerCards[id][0];
+        playerCards[targetId][index] = playerCards[id][0];
+        playerCards[id][0] = c1;
+        CardsManager.sort(playerCards[id]);
+        CardsManager.sort(playerCards[targetId]);
+//        try {
+//            players[id].getDataLock().lock();
+//            players[id].cards = playerCards[id];
+//        } finally {
+//            players[id].getDataLock().unlock();
+//        }
+        submitMaiAnimation(id, targetId, c2, c1);
 //        ToastUtils.showLong(String.format(Locale.getDefault(), "玩家%d用%s向玩家%d买了1张3",
 //                id, CardsManager.getCardString(CardsManager.getCardNumber(c2)), targetId));
     }
 
     private void jingong() {
+        gongText = "等待玩家进点贡";
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (DianReport r1 : dianReportList) {
+            if (r1.dian) {
+                for (DianReport r2 : dianReportList) {
+                    if (r2.id == r1.id)
+                        continue;
+                    if (r2.dian)
+                        continue;
+                    jingongSingleFor(r2.id, r1.id);
+                }
+            }
+        }
+        dianReportList.clear();
+        for (int i = 0; i < 3; i++) {
+            DianReport report = new DianReport();
+            report.id = i;
+            dianReportList.add(report);
+        }
         gongText = "等待玩家进闷贡";
         try {
             Thread.sleep(1000);
@@ -464,6 +560,14 @@ public class Desk {
         canPass[currentId] = true;
         nextPerson();
         if (cardsOnDesktop != null && currentId == cardsOnDesktop.playerId) {
+            switch (cardsOnDesktop.cardsType) {
+                case CardsType.danshun:
+                case CardsType.shuangshun:
+                case CardsType.sanshun:
+                case CardsType.feiji:
+                case CardsType.sidaier:
+                    players[currentId].dianFlag = true;
+            }
             currentCircle = 0;
             cardsOnDesktop = null;
             players[currentId].latestCards = null;

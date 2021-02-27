@@ -262,6 +262,8 @@ public class CardsAnalyzer {
 					count2++;
 				} else if (v == 3) { // TODO: AND condition for biesanMode judgement
 					// Do nothing here
+				} else if (v == 4) { // TODO: AND condition for biesanMode judgement
+					// Do nothing here
 				}
 				else {
 					countCards[v - 3]++;
