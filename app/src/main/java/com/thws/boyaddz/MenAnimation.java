@@ -11,7 +11,7 @@ import android.util.Log;
 public class MenAnimation extends BaseAnimation {
     Bitmap menPic;
     Bitmap beimenPic;
-    int sx, sy, dx, dy, size = 256;
+    int sx, sy, dx, dy, size = 128;
     Paint paint = new Paint();
 
     public MenAnimation(Context context, int srcX, int srcY, int destX, int destY) {
