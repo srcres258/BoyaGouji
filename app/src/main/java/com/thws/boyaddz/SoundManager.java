@@ -24,7 +24,8 @@ public class SoundManager {
         static int chupai2 = -1;
         static int chupai3 = -1;
         static int guopai = -1;
-        static int beimen;
+        static int beimen = -1;
+        static int dian = -1;
     }
 
     static SoundPool pool;
@@ -56,6 +57,7 @@ public class SoundManager {
         SoundID.chupai3 = pool.load(context, R.raw.chupai3, 1);
         SoundID.guopai = pool.load(context, R.raw.guopai, 1);
         SoundID.beimen = pool.load(context, R.raw.beimen, 1);
+        SoundID.dian = pool.load(context, R.raw.dian, 1);
     }
 
     public static void playCardsTypeSound(int type) {
@@ -133,5 +135,8 @@ public class SoundManager {
 
     public static void playMenSound() {
         pool.play(SoundID.beimen, 1, 1, 1, 0, 1);
+    }
+    public static void playDianSound() {
+        pool.play(SoundID.dian, 1, 1, 1, 0, 1);
     }
 }

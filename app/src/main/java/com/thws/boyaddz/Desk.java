@@ -168,6 +168,13 @@ public class Desk {
         gv.submitAnimation(anim);
     }
 
+    private void submitDianAnimation(int destId) {
+        DianAnimation anim = new DianAnimation(context,
+                (int) (iconPosition[destId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[destId][1] * MainActivity.SCALE_VERTICAL));
+        gv.submitAnimation(anim);
+    }
+
     private void submitJingongAnimation(int srcId, int destId, int card) {
         GiveCardAnimation anim = new GiveCardAnimation(context, card,
                 (int) (iconPosition[srcId][0] * MainActivity.SCALE_HORIAONTAL),
@@ -326,6 +333,8 @@ public class Desk {
             if (report.id == playerId)
                 report.dian = true;
         }
+        SoundManager.playDianSound();
+        submitDianAnimation(playerId);
         Log.i("BoYaDDZ", playerId + " kaidian");
     }
 
