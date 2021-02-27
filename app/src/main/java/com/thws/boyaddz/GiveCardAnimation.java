@@ -28,8 +28,8 @@ public class GiveCardAnimation extends BaseAnimation {
         int pDeltaX = (dx - sx) / 30;
         int pDeltaY = (dy - sy) / 30;
         RectF rect = new RectF(sx + pDeltaX * currentFrame, sy + pDeltaY * currentFrame,
-                (float) (sx + pDeltaX * currentFrame + 40 * MainActivity.SCALE_HORIAONTAL),
-                (float) (sy + pDeltaY * currentFrame + 60 * MainActivity.SCALE_VERTICAL));
+                (float) (sx + pDeltaX * currentFrame + 32 * MainActivity.SCALE_HORIAONTAL),
+                (float) (sy + pDeltaY * currentFrame + 48 * MainActivity.SCALE_VERTICAL));
         canvas.drawBitmap(cardPic, null, rect, paint);
     }
 }

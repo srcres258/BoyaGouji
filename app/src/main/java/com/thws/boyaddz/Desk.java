@@ -442,7 +442,7 @@ public class Desk {
         paintThreeCards(canvas);
         paintIconAndScore(canvas);
         paintTimeLimite(canvas);
-        if (!maisanCompleted)
+        if (biesanMode && !maisanCompleted)
             paintMaisanText(canvas);
 
         if (currentId == 0) {
@@ -656,6 +656,8 @@ public class Desk {
     }
 
     public void onTuch(int x, int y) {
+        if (biesanMode && !maisanCompleted)
+            return;
 
         if (op == 1) {
             beimenPlayerIds = new ArrayList<>();
