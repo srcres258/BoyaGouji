@@ -15,6 +15,7 @@ import android.graphics.RectF;
 
 import com.blankj.utilcode.util.ToastUtils;
 
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -58,6 +59,10 @@ public class Player {
 		cardsFlag = new boolean[cards.length];
 		this.setLeftAndTop(left, top);
 		this.paintDirection = paintDir;
+	}
+
+	public Lock getDataLock() {
+		return dataLock;
 	}
 
 	public void setLeftAndTop(int left, int top) {

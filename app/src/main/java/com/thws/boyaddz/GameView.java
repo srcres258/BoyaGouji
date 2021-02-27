@@ -11,7 +11,11 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
+import com.blankj.utilcode.util.CollectionUtils;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnTouchListener {
@@ -24,6 +28,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 	Bitmap backgroundBitmap;
 	LinkedList<BaseAnimation> animationList = new LinkedList<>();
 	ReentrantLock dataLock = new ReentrantLock();
+	LinkedList<Thread> animWaitingThreadList = new LinkedList<>();
 
 	Thread gameThread = new Thread() {
 		@Override
@@ -94,6 +99,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 				if (anim.isEnded()) {
 					try {
 						dataLock.lock();
+						for (Thread t : animWaitingThreadList) {
+							ArrayList<BaseAnimation> l = (ArrayList<BaseAnimation>) LockSupport.getBlocker(t);
+							l.remove(anim);
+							if (l.isEmpty()) {
+								LockSupport.unpark(t);
+								animWaitingThreadList.remove(t);
+							}
+						}
 						animationList.remove(anim);
 					} finally {
 						dataLock.unlock();
@@ -112,6 +125,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 		} finally {
 			dataLock.unlock();
 		}
+	}
+
+	public void waitForAnimation(BaseAnimation... anims) {
+		try {
+			dataLock.lock();
+			animWaitingThreadList.add(Thread.currentThread());
+		} finally {
+			dataLock.unlock();
+		}
+		ArrayList<BaseAnimation> l = CollectionUtils.newArrayListNotNull(anims);
+		LockSupport.park(l);
 	}
 
 	@Override

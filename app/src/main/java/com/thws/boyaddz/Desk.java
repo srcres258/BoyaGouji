@@ -13,10 +13,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.Log;
 
-import com.blankj.utilcode.util.ToastUtils;
-
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -63,6 +60,8 @@ public class Desk {
     public boolean biesanMode = true;
     private ArrayList<Integer> beimenPlayerIds = new ArrayList<>();
     private ReentrantLock dataLock = new ReentrantLock();
+    private boolean maisanCompleted = false;
+    private boolean shouldPaintButtons = false;
 
     public Desk(Context context, GameView gv) {
         this.context = context;
@@ -87,6 +86,10 @@ public class Desk {
                 op = 0;
                 break;
             case 0:
+                if (biesanMode && !maisanCompleted) {
+                    maisan();
+                    maisanCompleted = true;
+                }
                 checkGameOver();
                 break;
             case 1:
@@ -135,6 +138,7 @@ public class Desk {
                 (int) (iconPosition[buyerId][1] * MainActivity.SCALE_VERTICAL));
         gv.submitAnimation(a1);
         gv.submitAnimation(a2);
+        gv.waitForAnimation(a1, a2);
     }
 
     private void submitMenAnimation(int srcId, int destId) {
@@ -305,17 +309,6 @@ public class Desk {
         CardsManager.sort(playerCards[0]);
         CardsManager.sort(playerCards[1]);
         CardsManager.sort(playerCards[2]);
-        if (biesanMode) {
-            for (int i = 0; i < 3; i++) {
-                int sanAmount = 0;
-                for (int c : playerCards[i]) {
-                    if (c < 4)
-                        sanAmount++;
-                }
-                if (sanAmount == 0)
-                    maisan(i);
-            }
-        }
         players[0] = new Player(playerCards[0], playerCardsPosition[0][0],
                 playerCardsPosition[0][1], CardsType.direction_Horizontal, 0, this, context);
         players[1] = new Player(playerCards[1], playerCardsPosition[1][0],
@@ -336,7 +329,26 @@ public class Desk {
         threeCards[2] = cards[53];
     }
 
-    private void maisan(int id) {
+    private void maisan() {
+        shouldPaintButtons = false;
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < 3; i++) {
+            int sanAmount = 0;
+            for (int c : playerCards[i]) {
+                if (c < 4)
+                    sanAmount++;
+            }
+            if (sanAmount == 0)
+                maisanFor(i);
+        }
+        shouldPaintButtons = true;
+    }
+
+    private void maisanFor(int id) {
         Log.i("BoYaDDZ", "maisan: " + id);
         int targetId = -1;
         // Player objects hasn't been initialized yet, so use numeric IDs.
@@ -360,9 +372,15 @@ public class Desk {
         playerCards[id][0] = c1;
         CardsManager.sort(playerCards[id]);
         CardsManager.sort(playerCards[targetId]);
+//        try {
+//            players[id].getDataLock().lock();
+//            players[id].cards = playerCards[id];
+//        } finally {
+//            players[id].getDataLock().unlock();
+//        }
         submitMaisanAnimation(id, targetId, c2, c1);
-        ToastUtils.showLong(String.format(Locale.getDefault(), "玩家%d用%s向玩家%d买了1张3",
-                id, CardsManager.getCardString(CardsManager.getCardNumber(c2)), targetId));
+//        ToastUtils.showLong(String.format(Locale.getDefault(), "玩家%d用%s向玩家%d买了1张3",
+//                id, CardsManager.getCardString(CardsManager.getCardNumber(c2)), targetId));
     }
 
     private void chooseBoss() {
@@ -424,41 +442,44 @@ public class Desk {
         paintThreeCards(canvas);
         paintIconAndScore(canvas);
         paintTimeLimite(canvas);
+        if (!maisanCompleted)
+            paintMaisanText(canvas);
 
         if (currentId == 0) {
             Rect src = new Rect();
             Rect dst = new Rect();
 
-            src.set(0, 0, chuPaiImage.getWidth(), chuPaiImage.getHeight());
-            dst.set((int) (buttonPosition_X * MainActivity.SCALE_HORIAONTAL),
-                    (int) (buttonPosition_Y * MainActivity.SCALE_VERTICAL),
-                    (int) ((buttonPosition_X + 80) * MainActivity.SCALE_HORIAONTAL),
-                    (int) ((buttonPosition_Y + 40) * MainActivity.SCALE_VERTICAL));
-            canvas.drawBitmap(chuPaiImage, src, dst, null);
-
-            if (currentCircle != 0) {
-                src.set(0, 0, passImage.getWidth(), passImage.getHeight());
-                dst.set((int) ((buttonPosition_X - 80) * MainActivity.SCALE_HORIAONTAL),
+            if (shouldPaintButtons) {
+                src.set(0, 0, chuPaiImage.getWidth(), chuPaiImage.getHeight());
+                dst.set((int) (buttonPosition_X * MainActivity.SCALE_HORIAONTAL),
                         (int) (buttonPosition_Y * MainActivity.SCALE_VERTICAL),
-                        (int) ((buttonPosition_X) * MainActivity.SCALE_HORIAONTAL),
+                        (int) ((buttonPosition_X + 80) * MainActivity.SCALE_HORIAONTAL),
                         (int) ((buttonPosition_Y + 40) * MainActivity.SCALE_VERTICAL));
-                canvas.drawBitmap(passImage, src, dst, null);
+                canvas.drawBitmap(chuPaiImage, src, dst, null);
+
+                if (currentCircle != 0) {
+                    src.set(0, 0, passImage.getWidth(), passImage.getHeight());
+                    dst.set((int) ((buttonPosition_X - 80) * MainActivity.SCALE_HORIAONTAL),
+                            (int) (buttonPosition_Y * MainActivity.SCALE_VERTICAL),
+                            (int) ((buttonPosition_X) * MainActivity.SCALE_HORIAONTAL),
+                            (int) ((buttonPosition_Y + 40) * MainActivity.SCALE_VERTICAL));
+                    canvas.drawBitmap(passImage, src, dst, null);
+                }
+
+                src.set(0, 0, redoImage.getWidth(), redoImage.getHeight());
+                dst.set((int) ((buttonPosition_X + 80) * MainActivity.SCALE_HORIAONTAL),
+                        (int) ((buttonPosition_Y) * MainActivity.SCALE_VERTICAL),
+                        (int) ((buttonPosition_X + 160) * MainActivity.SCALE_HORIAONTAL),
+                        (int) ((buttonPosition_Y + 40) * MainActivity.SCALE_VERTICAL));
+                canvas.drawBitmap(redoImage, src, dst, null);
+
+                src.set(0, 0, tiShiImage.getWidth(), tiShiImage.getHeight());
+                dst.set((int) ((buttonPosition_X + 160) * MainActivity.SCALE_HORIAONTAL),
+                        (int) ((buttonPosition_Y) * MainActivity.SCALE_VERTICAL),
+                        (int) ((buttonPosition_X + 240) * MainActivity.SCALE_HORIAONTAL),
+                        (int) ((buttonPosition_Y + 40) * MainActivity.SCALE_VERTICAL));
+                canvas.drawBitmap(tiShiImage, src, dst, null);
             }
-
-            src.set(0, 0, redoImage.getWidth(), redoImage.getHeight());
-            dst.set((int) ((buttonPosition_X + 80) * MainActivity.SCALE_HORIAONTAL),
-                    (int) ((buttonPosition_Y) * MainActivity.SCALE_VERTICAL),
-                    (int) ((buttonPosition_X + 160) * MainActivity.SCALE_HORIAONTAL),
-                    (int) ((buttonPosition_Y + 40) * MainActivity.SCALE_VERTICAL));
-            canvas.drawBitmap(redoImage, src, dst, null);
-
-            src.set(0, 0, tiShiImage.getWidth(), tiShiImage.getHeight());
-            dst.set((int) ((buttonPosition_X + 160) * MainActivity.SCALE_HORIAONTAL),
-                    (int) ((buttonPosition_Y) * MainActivity.SCALE_VERTICAL),
-                    (int) ((buttonPosition_X + 240) * MainActivity.SCALE_HORIAONTAL),
-                    (int) ((buttonPosition_Y + 40) * MainActivity.SCALE_VERTICAL));
-            canvas.drawBitmap(tiShiImage, src, dst, null);
-
         }
 
         for (int i = 0; i < 3; i++) {
@@ -476,6 +497,16 @@ public class Desk {
         		paintBeimen(canvas, i);
 			}
 		}
+    }
+
+    private void paintMaisanText(Canvas canvas) {
+        Paint paint = new Paint();
+        paint.setTextSize((int) (16 * MainActivity.SCALE_VERTICAL));
+        paint.setStyle(Style.FILL);
+        paint.setColor(Color.RED);
+        canvas.drawText("等待玩家买3",
+                (int) (150 * MainActivity.SCALE_HORIAONTAL),
+                (int) (100 * MainActivity.SCALE_VERTICAL), paint);
     }
 
     private void paintTimeLimite(Canvas canvas) {
@@ -628,6 +659,8 @@ public class Desk {
 
         if (op == 1) {
             beimenPlayerIds = new ArrayList<>();
+            shouldPaintButtons = false;
+            maisanCompleted = false;
             op = -1;
         }
         players[0].onTuch(x, y);
