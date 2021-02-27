@@ -13,11 +13,19 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.Log;
 
+import com.blankj.utilcode.util.ArrayUtils;
+
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Desk {
+    static class MenReport {
+        int menId = -1;
+        int beimenId = -1;
+    }
+
     public static int winId = -1;
     Bitmap cardImg;
     Bitmap redoImage;
@@ -60,8 +68,10 @@ public class Desk {
     public boolean biesanMode = true;
     private ArrayList<Integer> beimenPlayerIds = new ArrayList<>();
     private ReentrantLock dataLock = new ReentrantLock();
-    private boolean maisanCompleted = false;
+    private boolean gongCompleted = false;
     private boolean shouldPaintButtons = false;
+    private LinkedList<MenReport> menReportList = new LinkedList<>();
+    private CharSequence gongText = "";
 
     public Desk(Context context, GameView gv) {
         this.context = context;
@@ -86,9 +96,12 @@ public class Desk {
                 op = 0;
                 break;
             case 0:
-                if (biesanMode && !maisanCompleted) {
+                if (biesanMode && !gongCompleted) {
+                    shouldPaintButtons = false;
                     maisan();
-                    maisanCompleted = true;
+                    jingong();
+                    gongCompleted = true;
+                    shouldPaintButtons = true;
                 }
                 checkGameOver();
                 break;
@@ -147,6 +160,16 @@ public class Desk {
                 (int) (iconPosition[destId][0] * MainActivity.SCALE_HORIAONTAL),
                 (int) (iconPosition[destId][1] * MainActivity.SCALE_VERTICAL));
         gv.submitAnimation(anim);
+    }
+
+    private void submitJingongAnimation(int srcId, int destId, int card) {
+        GiveCardAnimation anim = new GiveCardAnimation(context, card,
+                (int) (iconPosition[srcId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[srcId][1] * MainActivity.SCALE_VERTICAL),
+                (int) (iconPosition[destId][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[destId][1] * MainActivity.SCALE_VERTICAL));
+        gv.submitAnimation(anim);
+        gv.waitForAnimation(anim);
     }
 
     private void calculateResult() {
@@ -231,6 +254,10 @@ public class Desk {
 				if (tempcard != null) {
                     if (cardsOnDesktop != null && judgeBeimen(players[cardsOnDesktop.playerId])) {
                         beimenPlayerIds.add(cardsOnDesktop.playerId);
+                        MenReport report = new MenReport();
+                        report.menId = currentId;
+                        report.beimenId = cardsOnDesktop.playerId;
+                        menReportList.add(report);
                         submitMenAnimation(currentId, cardsOnDesktop.playerId);
                         SoundManager.playMenSound();
                     }
@@ -255,6 +282,10 @@ public class Desk {
                     if (card != null) {
                         if (cardsOnDesktop != null && judgeBeimen(players[cardsOnDesktop.playerId])) {
                             beimenPlayerIds.add(cardsOnDesktop.playerId);
+                            MenReport report = new MenReport();
+                            report.menId = currentId;
+                            report.beimenId = cardsOnDesktop.playerId;
+                            menReportList.add(report);
                             submitMenAnimation(currentId, cardsOnDesktop.playerId);
                             SoundManager.playMenSound();
                         }
@@ -330,7 +361,7 @@ public class Desk {
     }
 
     private void maisan() {
-        shouldPaintButtons = false;
+        gongText = "等待玩家买3";
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -345,13 +376,11 @@ public class Desk {
             if (sanAmount == 0)
                 maisanFor(i);
         }
-        shouldPaintButtons = true;
     }
 
     private void maisanFor(int id) {
         Log.i("BoYaDDZ", "maisan: " + id);
         int targetId = -1;
-        // Player objects hasn't been initialized yet, so use numeric IDs.
         for (int i = 0; i < 3; i++) {
             if (id == i)
                 continue;
@@ -381,6 +410,41 @@ public class Desk {
         submitMaisanAnimation(id, targetId, c2, c1);
 //        ToastUtils.showLong(String.format(Locale.getDefault(), "玩家%d用%s向玩家%d买了1张3",
 //                id, CardsManager.getCardString(CardsManager.getCardNumber(c2)), targetId));
+    }
+
+    private void jingong() {
+        gongText = "等待玩家进闷贡";
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (MenReport report : menReportList) {
+            jingongSingleFor(report.beimenId, report.menId);
+        }
+        menReportList.clear();
+    }
+
+    private void jingongSingleFor(int srcId, int destId) {
+        Log.i("BoYaDDZ", "jingong: from " + srcId + " to " + destId);
+        int c = playerCards[srcId][0];
+        try {
+            players[srcId].getDataLock().lock();
+            playerCards[srcId] = ArrayUtils.remove(playerCards[srcId], 0);
+            CardsManager.sort(playerCards[srcId]);
+            players[srcId].setCards(playerCards[srcId]);
+        } finally {
+            players[srcId].getDataLock().unlock();
+        }
+        try {
+            players[destId].getDataLock().lock();
+            playerCards[destId] = ArrayUtils.add(playerCards[destId], c);
+            CardsManager.sort(playerCards[destId]);
+            players[destId].setCards(playerCards[destId]);
+        } finally {
+            players[destId].getDataLock().unlock();
+        }
+        submitJingongAnimation(srcId, destId, c);
     }
 
     private void chooseBoss() {
@@ -442,8 +506,8 @@ public class Desk {
         paintThreeCards(canvas);
         paintIconAndScore(canvas);
         paintTimeLimite(canvas);
-        if (biesanMode && !maisanCompleted)
-            paintMaisanText(canvas);
+        if (biesanMode && !gongCompleted)
+            paintGongText(canvas);
 
         if (currentId == 0) {
             Rect src = new Rect();
@@ -499,12 +563,12 @@ public class Desk {
 		}
     }
 
-    private void paintMaisanText(Canvas canvas) {
+    private void paintGongText(Canvas canvas) {
         Paint paint = new Paint();
         paint.setTextSize((int) (16 * MainActivity.SCALE_VERTICAL));
         paint.setStyle(Style.FILL);
         paint.setColor(Color.RED);
-        canvas.drawText("等待玩家买3",
+        canvas.drawText(gongText.toString(),
                 (int) (150 * MainActivity.SCALE_HORIAONTAL),
                 (int) (100 * MainActivity.SCALE_VERTICAL), paint);
     }
@@ -635,7 +699,6 @@ public class Desk {
         paint.setStrokeWidth(1);
         paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
         for (int i = 0; i < 3; i++) {
-            dataLock.lock();
             int row = CardsManager.getImageRow(threeCards[i]);
             int col = CardsManager.getImageCol(threeCards[i]);
             Bitmap image = BitmapFactory.decodeResource(context.getResources(),
@@ -656,13 +719,13 @@ public class Desk {
     }
 
     public void onTuch(int x, int y) {
-        if (biesanMode && !maisanCompleted)
+        if (biesanMode && !gongCompleted)
             return;
 
         if (op == 1) {
-            beimenPlayerIds = new ArrayList<>();
+            beimenPlayerIds.clear();
             shouldPaintButtons = false;
-            maisanCompleted = false;
+            gongCompleted = false;
             op = -1;
         }
         players[0].onTuch(x, y);

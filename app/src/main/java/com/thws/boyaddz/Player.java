@@ -75,6 +75,11 @@ public class Player {
 		this.next = next;
 	}
 
+	public void setCards(int[] cards) {
+		this.cards = cards;
+		cardsFlag = new boolean[cards.length];
+	}
+
 	public void paint(Canvas canvas) {
 		Function<Integer, Boolean> cardsFlagF = (i) -> {
 			boolean ret;
@@ -148,9 +153,9 @@ public class Player {
 					}
 					dataLock.unlock();
 					src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
-					des.set((int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
+					des.set((int) ((left + i * 15) * MainActivity.SCALE_HORIAONTAL),
 							(int) ((top - select) * MainActivity.SCALE_VERTICAL),
-							(int) ((left + 40 + i * 20) * MainActivity.SCALE_HORIAONTAL), (int) ((top
+							(int) ((left + 40 + i * 15) * MainActivity.SCALE_HORIAONTAL), (int) ((top
 									- select + 60) * MainActivity.SCALE_VERTICAL));
 					RectF rectF = new RectF(des);
 					canvas.drawRoundRect(rectF, 5, 5, paint);
@@ -385,7 +390,7 @@ public class Player {
 				// �ж��������Ʊ�ѡ�У����ñ�־
 				if (i != cards.length - 1) {
 					if (CardsManager.inRect(x, y,
-							(int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((left + i * 15) * MainActivity.SCALE_HORIAONTAL),
 							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
 							(int) (20 * MainActivity.SCALE_HORIAONTAL),
 							(int) (60 * MainActivity.SCALE_VERTICAL))) {
@@ -394,7 +399,7 @@ public class Player {
 					}
 				} else {
 					if (CardsManager.inRect(x, y,
-							(int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((left + i * 15) * MainActivity.SCALE_HORIAONTAL),
 							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
 							(int) (40 * MainActivity.SCALE_HORIAONTAL),
 							(int) (60 * MainActivity.SCALE_VERTICAL))) {
