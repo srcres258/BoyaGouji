@@ -363,6 +363,20 @@ public class Desk {
     }
 
     public void init() {
+        class MyClosure implements ArrayUtils.Closure<Integer> {
+            int[] tmp = ArrayUtils.copy(allCards);
+            int count = 0;
+
+            @Override
+            public void execute(int index, Integer item) {
+                if (count == 9)
+                    return;
+                if (CardsManager.getCardNumber(item) == 3) {
+                    tmp = ArrayUtils.remove(tmp, index - count);
+                    count++;
+                }
+            }
+        }
         allCards = new int[162];
         playerCards = new int[3][54];
         threeCards = new int[3];
@@ -386,20 +400,7 @@ public class Desk {
             else
                 allCards[i] = i;
         }
-        ArrayUtils.Closure<Integer> cl = new ArrayUtils.Closure<Integer>() {
-            int[] tmp = ArrayUtils.copy(allCards);
-            int count = 0;
-
-            @Override
-            public void execute(int index, Integer item) {
-                if (count == 9)
-                    return;
-                if (CardsManager.getCardNumber(item) == 3) {
-                    tmp = ArrayUtils.remove(tmp, index - count);
-                    count++;
-                }
-            }
-        }
+        MyClosure cl = new MyClosure();
         ArrayUtils.forAllDo(allCards, cl);
         allCards = cl.tmp;
         CardsManager.shuffle(allCards);
@@ -957,7 +958,7 @@ public class Desk {
             op = -1;
         }
         players[0].onTuch(x, y);
-        if (currentId == 0) {
+        if (currentId == 0 && shouldPaintButtons) {
 
             if (CardsManager.inRect(x, y, (int) (buttonPosition_X * MainActivity.SCALE_HORIAONTAL),
                     (int) (buttonPosition_Y * MainActivity.SCALE_VERTICAL),
