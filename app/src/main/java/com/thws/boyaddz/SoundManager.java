@@ -60,60 +60,77 @@ public class SoundManager {
         SoundID.dian = pool.load(context, R.raw.dian, 1);
     }
 
-    public static void playCardsTypeSound(int type) {
+//    public static void playCardsTypeSound(int type) {
+////        switch (type) {
+////            case CardsType.danpai:
+////                pool.play(SoundID.danpai, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.duipai:
+////                pool.play(SoundID.duipai, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.sanzhang:
+////                pool.play(SoundID.sanzhang, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.sandaiyi:
+////                pool.play(SoundID.sandaiyi, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.danshun:
+////                pool.play(SoundID.danshun, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.shuangshun:
+////                pool.play(SoundID.shuangshun, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.sanshun:
+////                pool.play(SoundID.sanshun, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.feiji:
+////                pool.play(SoundID.feiji, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.sidaier:
+////                pool.play(SoundID.sidaier, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.zhadan:
+////                pool.play(SoundID.zhadan, 1, 1, 1, 0, 1);
+////                break;
+////            case CardsType.huojian:
+////                pool.play(SoundID.huojian, 1, 1, 1, 0, 1);
+////                break;
+////            default:
+////                Log.e("BoYaDDZ-SoundManager", "Invalid CardsType value!");
+////        }
 //        switch (type) {
 //            case CardsType.danpai:
-//                pool.play(SoundID.danpai, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.duipai:
-//                pool.play(SoundID.duipai, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.sanzhang:
-//                pool.play(SoundID.sanzhang, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.sandaiyi:
-//                pool.play(SoundID.sandaiyi, 1, 1, 1, 0, 1);
+//                pool.play(SoundID.chupai1, 1, 1, 1, 0, 1);
 //                break;
 //            case CardsType.danshun:
-//                pool.play(SoundID.danshun, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.shuangshun:
-//                pool.play(SoundID.shuangshun, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.sanshun:
-//                pool.play(SoundID.sanshun, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.feiji:
-//                pool.play(SoundID.feiji, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.sidaier:
-//                pool.play(SoundID.sidaier, 1, 1, 1, 0, 1);
+//                pool.play(SoundID.chupai2, 1, 1, 1, 0, 1);
 //                break;
 //            case CardsType.zhadan:
-//                pool.play(SoundID.zhadan, 1, 1, 1, 0, 1);
-//                break;
 //            case CardsType.huojian:
-//                pool.play(SoundID.huojian, 1, 1, 1, 0, 1);
+//                pool.play(SoundID.chupai3, 1, 1, 1, 0, 1);
 //                break;
 //            default:
 //                Log.e("BoYaDDZ-SoundManager", "Invalid CardsType value!");
 //        }
+//    }
+
+    public static void playCardsTypeSound(int type) {
         switch (type) {
-            case CardsType.danpai:
-            case CardsType.duipai:
-            case CardsType.sanzhang:
-            case CardsType.sandaiyi:
+            case GJCardsType.chupai:
                 pool.play(SoundID.chupai1, 1, 1, 1, 0, 1);
                 break;
-            case CardsType.danshun:
-            case CardsType.shuangshun:
-            case CardsType.sanshun:
-            case CardsType.feiji:
-            case CardsType.sidaier:
+            case GJCardsType.gouji:
                 pool.play(SoundID.chupai2, 1, 1, 1, 0, 1);
                 break;
-            case CardsType.zhadan:
-            case CardsType.huojian:
+            case GJCardsType.guaxiaowang:
+            case GJCardsType.guadawang:
                 pool.play(SoundID.chupai3, 1, 1, 1, 0, 1);
                 break;
             default:

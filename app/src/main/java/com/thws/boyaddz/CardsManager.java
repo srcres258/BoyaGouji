@@ -1,5 +1,7 @@
 package com.thws.boyaddz;
 
+import com.blankj.utilcode.util.ArrayUtils;
+
 import java.util.Random;
 import java.util.Vector;
 
@@ -17,7 +19,7 @@ public class CardsManager {
     public static void shuffle(int[] cards) {
         int len = cards.length;
         for (int l = 0; l < len; l++) {
-            int des = rand.nextInt(54);
+            int des = rand.nextInt(108);
             int temp = cards[l];
             cards[l] = cards[des];
             cards[des] = temp;
@@ -238,117 +240,143 @@ public class CardsManager {
         return true;
     }
 
+    public static boolean isCardsCorrect(int[] cards) {
+        try {
+            GJCardsAnalyzer ana = GJCardsAnalyzer.obtain();
+            ana.setPokes(cards);
+            return true;
+        } catch (IllegalGJCardsException e) {
+            return false;
+        }
+    }
+
+//    public static int getType(int[] cards) {
+//        int len = cards.length;
+//
+//        boolean has4 = false, all4 = true;
+//        for (int card : cards) {
+//            if (getCardNumber(card) == 4)
+//                has4 = true;
+//            all4 &= getCardNumber(card) == 4;
+//        }
+//        if (has4 && !all4) {
+//            return CardsType.error;
+//        }
+//
+//        if (len == 1) {
+//            return CardsType.danpai;
+//        }
+//
+//        if (len == 2) {
+//            if (cards[0] == 53 && cards[1] == 52) {
+//                return CardsType.huojian;
+//            }
+//            if (getCardNumber(cards[0]) == getCardNumber(cards[1])) {
+//                return CardsType.duipai;
+//            }
+//        }
+//
+//        if (len == 3) {
+//            if (getCardNumber(cards[0]) == getCardNumber(cards[2])) {
+//                return CardsType.sanzhang;
+//            }
+//        }
+//
+//        if (len == 4) {
+//            if (getCardNumber(cards[0]) == getCardNumber(cards[2])
+//                    || getCardNumber(cards[1]) == getCardNumber(cards[3])) {
+//                if (getCardNumber(cards[0]) == getCardNumber(cards[3])) {
+//                    return CardsType.zhadan;
+//                } else {
+//                    return CardsType.sandaiyi;
+//                }
+//            }
+//        }
+//
+//        if (len >= 5) {
+//            if (isDanShun(cards)) {
+//                return CardsType.danshun;
+//            }
+//        }
+//
+//        if (len == 5) {
+//            if (getCardNumber(cards[0]) == getCardNumber(cards[2])
+//                    && getCardNumber(cards[3]) == getCardNumber(cards[4])) {
+//                return CardsType.sandaiyi;
+//            }
+//            if (getCardNumber(cards[0]) == getCardNumber(cards[1])
+//                    && getCardNumber(cards[2]) == getCardNumber(cards[4])) {
+//                return CardsType.sandaiyi;
+//            }
+//        }
+//
+//        if (len >= 6) {
+//            if (isShuangShun(cards)) {
+//                return CardsType.shuangshun;
+//            }
+//            if (isSanShun(cards)) {
+//                return CardsType.sanshun;
+//            }
+//
+//        }
+//
+//        if (len == 6) {
+//            if (getCardNumber(cards[0]) == getCardNumber(cards[3])
+//                    || getCardNumber(cards[1]) == getCardNumber(cards[4])
+//                    || getCardNumber(cards[2]) == getCardNumber(cards[5])) {
+//                return CardsType.sidaier;
+//            }
+//        }
+//
+//
+//        if (len >= 8) {
+//            if (isFeiJi(cards)) {
+//                return CardsType.feiji;
+//            }
+//        }
+//
+//        if (len == 8) {
+//            int key = 0;
+//            boolean ifFound = false;
+//            for (int i = 0; i <= cards.length - 4; i++) {
+//                if (getCardNumber(cards[i]) == getCardNumber(cards[i + 3])) {
+//                    ifFound = true;
+//                    key = i;
+//                    break;
+//                }
+//            }
+//            if (ifFound == true) {
+//                int[] otherCards = new int[4];
+//                for (int i = 0; i < key; i++) {
+//                    otherCards[i] = cards[i];
+//                }
+//                for (int i = key + 4; i < cards.length; i++) {
+//                    otherCards[i - 4] = cards[i];
+//                }
+//                if (isTwined(otherCards)) {
+//                    return CardsType.sidaier;
+//
+//                }
+//            }
+//
+//        }
+//        return CardsType.error;
+//    }
+
     public static int getType(int[] cards) {
-        int len = cards.length;
-
-        boolean has4 = false, all4 = true;
-        for (int card : cards) {
-            if (getCardNumber(card) == 4)
-                has4 = true;
-            all4 &= getCardNumber(card) == 4;
+        try {
+            GJCardsAnalyzer ana = GJCardsAnalyzer.obtain();
+            ana.setPokes(cards);
+            if (ana.getDCount() > 0)
+                return GJCardsType.guadawang;
+            if (ana.getXCount() > 0)
+                return GJCardsType.guaxiaowang;
+            if (ana.isGouji())
+                return GJCardsType.gouji;
+            return GJCardsType.chupai;
+        } catch (IllegalGJCardsException e) {
+            return GJCardsType.error;
         }
-        if (has4 && !all4) {
-            return CardsType.error;
-        }
-
-        if (len == 1) {
-            return CardsType.danpai;
-        }
-
-        if (len == 2) {
-            if (cards[0] == 53 && cards[1] == 52) {
-                return CardsType.huojian;
-            }
-            if (getCardNumber(cards[0]) == getCardNumber(cards[1])) {
-                return CardsType.duipai;
-            }
-        }
-
-        if (len == 3) {
-            if (getCardNumber(cards[0]) == getCardNumber(cards[2])) {
-                return CardsType.sanzhang;
-            }
-        }
-
-        if (len == 4) {
-            if (getCardNumber(cards[0]) == getCardNumber(cards[2])
-                    || getCardNumber(cards[1]) == getCardNumber(cards[3])) {
-                if (getCardNumber(cards[0]) == getCardNumber(cards[3])) {
-                    return CardsType.zhadan;
-                } else {
-                    return CardsType.sandaiyi;
-                }
-            }
-        }
-
-        if (len >= 5) {
-            if (isDanShun(cards)) {
-                return CardsType.danshun;
-            }
-        }
-
-        if (len == 5) {
-            if (getCardNumber(cards[0]) == getCardNumber(cards[2])
-                    && getCardNumber(cards[3]) == getCardNumber(cards[4])) {
-                return CardsType.sandaiyi;
-            }
-            if (getCardNumber(cards[0]) == getCardNumber(cards[1])
-                    && getCardNumber(cards[2]) == getCardNumber(cards[4])) {
-                return CardsType.sandaiyi;
-            }
-        }
-
-        if (len >= 6) {
-            if (isShuangShun(cards)) {
-                return CardsType.shuangshun;
-            }
-            if (isSanShun(cards)) {
-                return CardsType.sanshun;
-            }
-
-        }
-
-        if (len == 6) {
-            if (getCardNumber(cards[0]) == getCardNumber(cards[3])
-                    || getCardNumber(cards[1]) == getCardNumber(cards[4])
-                    || getCardNumber(cards[2]) == getCardNumber(cards[5])) {
-                return CardsType.sidaier;
-            }
-        }
-
-
-        if (len >= 8) {
-            if (isFeiJi(cards)) {
-                return CardsType.feiji;
-            }
-        }
-
-        if (len == 8) {
-            int key = 0;
-            boolean ifFound = false;
-            for (int i = 0; i <= cards.length - 4; i++) {
-                if (getCardNumber(cards[i]) == getCardNumber(cards[i + 3])) {
-                    ifFound = true;
-                    key = i;
-                    break;
-                }
-            }
-            if (ifFound == true) {
-                int[] otherCards = new int[4];
-                for (int i = 0; i < key; i++) {
-                    otherCards[i] = cards[i];
-                }
-                for (int i = key + 4; i < cards.length; i++) {
-                    otherCards[i - 4] = cards[i];
-                }
-                if (isTwined(otherCards)) {
-                    return CardsType.sidaier;
-
-                }
-            }
-
-        }
-        return CardsType.error;
     }
 
     public static int getValue(int[] cards) {
@@ -388,193 +416,211 @@ public class CardsManager {
         return true;
     }
 
-    /**
-     * ����true ǰ���ƴ�
-     *
-     * @param f
-     * @param s
-     * @return
-     */
-    public static int compare(CardsHolder f, CardsHolder s) {
-        if (f.cardsType == s.cardsType) {
-            if (f.cards.length != s.cards.length)
-                return -1;
-            else {
-                if (f.value > s.value) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
+//    /**
+//     * ����true ǰ���ƴ�
+//     *
+//     * @param f
+//     * @param s
+//     * @return
+//     */
+//    public static int compare(CardsHolder f, CardsHolder s) {
+//        if (f.cardsType == s.cardsType) {
+//            if (f.cards.length != s.cards.length)
+//                return -1;
+//            else {
+//                if (f.value > s.value) {
+//                    return 1;
+//                } else {
+//                    return 0;
+//                }
+//            }
+//
+//        }
+//        if (f.cardsType == CardsType.huojian) {
+//            return 1;
+//        }
+//        if (s.cardsType == CardsType.huojian) {
+//            return 0;
+//        }
+//        if (f.cardsType == CardsType.zhadan) {
+//            return 1;
+//        }
+//        if (s.cardsType == CardsType.zhadan) {
+//            return 0;
+//        }
+//        return -1;
+//    }
 
-        }
-        if (f.cardsType == CardsType.huojian) {
-            return 1;
-        }
-        if (s.cardsType == CardsType.huojian) {
-            return 0;
-        }
-        if (f.cardsType == CardsType.zhadan) {
-            return 1;
-        }
-        if (s.cardsType == CardsType.zhadan) {
-            return 0;
-        }
-        return -1;
+
+    public static int compare(CardsHolder f, CardsHolder s) {
+        //TODO
+        return 1;
     }
+
+//    public static int[] outCardByItsself(int cards[], Player last, Player next) {
+//        CardsAnalyzer analyze = CardsAnalyzer.getInstance();
+//        analyze.setPokes(cards);
+//        int cardArray[] = null;
+//        Vector<int[]> card_danpai = analyze.getCard_danpai();
+//        Vector<int[]> card_sanshun = analyze.getCard_sanshun();
+//
+//        int danpai = card_danpai.size();
+//        int sanshun = card_sanshun.size();
+//
+//        int[] miniType = analyze.getMinType(last, next);
+//        System.out.println("miniType:" + miniType[0] + "," + miniType[1]);
+//        switch (miniType[0]) {
+//            case CardsType.sanshun:
+//                System.out.println("sanshun is over");
+//                if (sanshun > 0) {
+//                    cardArray = card_sanshun.elementAt(miniType[1]);
+//
+//                    if (cardArray.length / 3 < danpai) {
+//                        int[] desArray = new int[cardArray.length / 3 * 4];
+//                        for (int i = 0; i < cardArray.length; i++) {
+//                            desArray[i] = cardArray[i];
+//                        }
+//                        for (int j = 0; j < cardArray.length / 3; j++) {
+//                            desArray[cardArray.length + j] = card_danpai.elementAt(j)[0];
+//                        }
+//                        CardsManager.sort(desArray);
+//                        return desArray;
+//                    } else {
+//                        return cardArray;
+//                    }
+//                }
+//                break;
+//            case CardsType.shuangshun:
+//                System.out.println("shuangshun is over");
+//                Vector<int[]> card_shuangshun = analyze.getCard_shuangshun();
+//                System.out.println("shuangshun:" + card_shuangshun.size());
+//                if (card_shuangshun.size() > 0) {
+//                    cardArray = card_shuangshun.elementAt(miniType[1]);
+//                    return cardArray;
+//                }
+//                break;
+//            case CardsType.danshun:
+//                System.out.println("danshun is over");
+//                Vector<int[]> card_danshun = analyze.getCard_danshun();
+//                if (card_danshun.size() > 0) {
+//                    return card_danshun.elementAt(miniType[1]);
+//                }
+//                break;
+//            case CardsType.sanzhang:
+//                System.out.println("sanzhang is over");
+//                Vector<int[]> card_sanzhang = analyze.getCard_sanzhang();
+//                if (card_sanzhang.size() > 0) {
+//                    int[] sanzhangArray = card_sanzhang.elementAt(miniType[1]);
+//                    if (danpai > 0) {
+//                        int newA[] = new int[]{sanzhangArray[0], sanzhangArray[1],
+//                                sanzhangArray[2], card_danpai.elementAt(0)[0]};
+//                        CardsManager.sort(newA);
+//                        return newA;
+//                    } else {
+//                        return sanzhangArray;
+//                    }
+//                }
+//                break;
+//            case CardsType.duipai:
+//                System.out.println("duipai is over");
+//                Vector<int[]> card_duipai = analyze.getCard_duipai();
+//                if (card_duipai.size() > 0) {
+//                    return card_duipai.elementAt(miniType[1]);
+//                }
+//                break;
+//            case CardsType.danpai:
+//                System.out.println("danpai is over");
+//                if (danpai > 0) {
+//                    return card_danpai.elementAt(miniType[1]);
+//                }
+//                break;
+//        }
+//
+//        Vector<int[]> card_zhadan = analyze.getCard_zhadan();
+//        if (card_zhadan.size() > 0) {
+//            return card_zhadan.elementAt(0);
+//        }
+//        return new int[]{cards[0]};
+//    }
 
     public static int[] outCardByItsself(int cards[], Player last, Player next) {
-        CardsAnalyzer analyze = CardsAnalyzer.getInstance();
-        analyze.setPokes(cards);
-        int cardArray[] = null;
-        Vector<int[]> card_danpai = analyze.getCard_danpai();
-        Vector<int[]> card_sanshun = analyze.getCard_sanshun();
-
-        int danpai = card_danpai.size();
-        int sanshun = card_sanshun.size();
-
-        int[] miniType = analyze.getMinType(last, next);
-        System.out.println("miniType:" + miniType[0] + "," + miniType[1]);
-        switch (miniType[0]) {
-            case CardsType.sanshun:
-                System.out.println("sanshun is over");
-                if (sanshun > 0) {
-                    cardArray = card_sanshun.elementAt(miniType[1]);
-
-                    if (cardArray.length / 3 < danpai) {
-                        int[] desArray = new int[cardArray.length / 3 * 4];
-                        for (int i = 0; i < cardArray.length; i++) {
-                            desArray[i] = cardArray[i];
-                        }
-                        for (int j = 0; j < cardArray.length / 3; j++) {
-                            desArray[cardArray.length + j] = card_danpai.elementAt(j)[0];
-                        }
-                        CardsManager.sort(desArray);
-                        return desArray;
-                    } else {
-                        return cardArray;
-                    }
-                }
-                break;
-            case CardsType.shuangshun:
-                System.out.println("shuangshun is over");
-                Vector<int[]> card_shuangshun = analyze.getCard_shuangshun();
-                System.out.println("shuangshun:" + card_shuangshun.size());
-                if (card_shuangshun.size() > 0) {
-                    cardArray = card_shuangshun.elementAt(miniType[1]);
-                    return cardArray;
-                }
-                break;
-            case CardsType.danshun:
-                System.out.println("danshun is over");
-                Vector<int[]> card_danshun = analyze.getCard_danshun();
-                if (card_danshun.size() > 0) {
-                    return card_danshun.elementAt(miniType[1]);
-                }
-                break;
-            case CardsType.sanzhang:
-                System.out.println("sanzhang is over");
-                Vector<int[]> card_sanzhang = analyze.getCard_sanzhang();
-                if (card_sanzhang.size() > 0) {
-                    int[] sanzhangArray = card_sanzhang.elementAt(miniType[1]);
-                    if (danpai > 0) {
-                        int newA[] = new int[]{sanzhangArray[0], sanzhangArray[1],
-                                sanzhangArray[2], card_danpai.elementAt(0)[0]};
-                        CardsManager.sort(newA);
-                        return newA;
-                    } else {
-                        return sanzhangArray;
-                    }
-                }
-                break;
-            case CardsType.duipai:
-                System.out.println("duipai is over");
-                Vector<int[]> card_duipai = analyze.getCard_duipai();
-                if (card_duipai.size() > 0) {
-                    return card_duipai.elementAt(miniType[1]);
-                }
-                break;
-            case CardsType.danpai:
-                System.out.println("danpai is over");
-                if (danpai > 0) {
-                    return card_danpai.elementAt(miniType[1]);
-                }
-                break;
-        }
-
-        Vector<int[]> card_zhadan = analyze.getCard_zhadan();
-        if (card_zhadan.size() > 0) {
-            return card_zhadan.elementAt(0);
-        }
-        return new int[]{cards[0]};
+        GJPlayerCardsAnalyzer ana = GJPlayerCardsAnalyzer.obtain();
+        ana.setPokes(cards);
+        return ana.getMinCards();
     }
 
+//    public static int[] findTheRightCard(CardsHolder card, int cards[], Player last, Player next) {
+//        CardsAnalyzer cardsAnalyzer = CardsAnalyzer.getInstance();
+//        cardsAnalyzer.setPokes(cards);
+//        int c = cardsAnalyzer.remainCount();
+//        if (c == 1) {
+//            return findBigerCards(card, cards, 100);
+//        }
+//
+//        if (Desk.boss != last.playerId && Desk.boss != next.playerId) {
+//            int pokeLength = Desk.players[card.playerId].cards.length;
+//            int must = pokeLength * 100 / 17;
+//            if (pokeLength <= 2) {
+//                must = 100;
+//            }
+//            return findBigerCards(card, cards, must);
+//
+//        }
+//
+//        if (Desk.boss == last.playerId) {
+//            if (card.playerId == last.playerId) {
+//                int pokeLength = Desk.players[card.playerId].cards.length;
+//                int must = pokeLength * 100 / 17;
+//                if (pokeLength <= 2) {
+//                    must = 100;
+//                }
+//                return findBigerCards(card, cards, must);
+//            } else if (card.playerId == next.playerId) {
+//                if (c <= 3) {
+//                    return findBigerCards(card, cards, 100);
+//                }
+//                return null;
+//            }
+//        }
+//
+//        if (Desk.boss == next.playerId) {
+//            if (card.playerId == last.playerId) {
+//                if (card.value < 12) {
+//                    int pokeLength = Desk.players[card.playerId].cards.length;
+//                    int must = 100 - pokeLength * 100 / 17;
+//                    if (pokeLength <= 4) {
+//                        must = 0;
+//                    }
+//                    CardsAnalyzer ana = CardsAnalyzer.getInstance();
+//                    ana.setPokes(next.cards);
+//                    if (ana.remainCount() <= 1) {
+//                        if (ana.lastCardTypeEq(card.cardsType)
+//                                && (Desk.boss == next.playerId || (Desk.boss != next.playerId && Desk.boss != last.playerId))) {
+//                            return findBigerCards(card, cards, 100);
+//                        }
+//                    } else {
+//                        return findBigerCards(card, cards, must);
+//                    }
+//
+//                } else {
+//                    return null;
+//                }
+//            } else if (card.playerId == next.playerId) {
+//                int pokeLength = Desk.players[card.playerId].cards.length;
+//                int must = pokeLength * 100 / 17;
+//                if (pokeLength <= 2) {
+//                    must = 100;
+//                }
+//                return findBigerCards(card, cards, must);
+//            }
+//        }
+//        return null;
+//    }
+
     public static int[] findTheRightCard(CardsHolder card, int cards[], Player last, Player next) {
-        CardsAnalyzer cardsAnalyzer = CardsAnalyzer.getInstance();
-        cardsAnalyzer.setPokes(cards);
-        int c = cardsAnalyzer.remainCount();
-        if (c == 1) {
-            return findBigerCards(card, cards, 100);
-        }
-
-        if (Desk.boss != last.playerId && Desk.boss != next.playerId) {
-            int pokeLength = Desk.players[card.playerId].cards.length;
-            int must = pokeLength * 100 / 17;
-            if (pokeLength <= 2) {
-                must = 100;
-            }
-            return findBigerCards(card, cards, must);
-
-        }
-
-        if (Desk.boss == last.playerId) {
-            if (card.playerId == last.playerId) {
-                int pokeLength = Desk.players[card.playerId].cards.length;
-                int must = pokeLength * 100 / 17;
-                if (pokeLength <= 2) {
-                    must = 100;
-                }
-                return findBigerCards(card, cards, must);
-            } else if (card.playerId == next.playerId) {
-                if (c <= 3) {
-                    return findBigerCards(card, cards, 100);
-                }
-                return null;
-            }
-        }
-
-        if (Desk.boss == next.playerId) {
-            if (card.playerId == last.playerId) {
-                if (card.value < 12) {
-                    int pokeLength = Desk.players[card.playerId].cards.length;
-                    int must = 100 - pokeLength * 100 / 17;
-                    if (pokeLength <= 4) {
-                        must = 0;
-                    }
-                    CardsAnalyzer ana = CardsAnalyzer.getInstance();
-                    ana.setPokes(next.cards);
-                    if (ana.remainCount() <= 1) {
-                        if (ana.lastCardTypeEq(card.cardsType)
-                                && (Desk.boss == next.playerId || (Desk.boss != next.playerId && Desk.boss != last.playerId))) {
-                            return findBigerCards(card, cards, 100);
-                        }
-                    } else {
-                        return findBigerCards(card, cards, must);
-                    }
-
-                } else {
-                    return null;
-                }
-            } else if (card.playerId == next.playerId) {
-                int pokeLength = Desk.players[card.playerId].cards.length;
-                int must = pokeLength * 100 / 17;
-                if (pokeLength <= 2) {
-                    must = 100;
-                }
-                return findBigerCards(card, cards, must);
-            }
-        }
-        return null;
+        GJCardsAnalyzer ana = GJCardsAnalyzer.obtain();
+        ana.setPokes(card.cards);
+        return ana.getLargerCards(cards);
     }
 
     public static int[] findBigerCards(CardsHolder card, int cards[], int must) {

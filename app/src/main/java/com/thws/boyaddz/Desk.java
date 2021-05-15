@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 public class Desk {
     static class DianReport {
@@ -52,9 +53,9 @@ public class Desk {
     private int buttonPosition_X = 240;
     private int buttonPosition_Y = 160;
     private boolean[] canPass = new boolean[3];
-    private int[][] playerCards = new int[3][17];
+    private int[][] playerCards = null;
     private boolean canDrawLatestCards = false;
-    private int[] allCards = new int[54];
+    private int[] allCards = null;
     private int currentScore = 10;
     private int currentId = 0;
     private int currentCircle = 0;
@@ -77,6 +78,7 @@ public class Desk {
     private LinkedList<DianReport> dianReportList = new LinkedList<>();
     private LinkedList<MenReport> menReportList = new LinkedList<>();
     private CharSequence gongText = "";
+    private LinkedList<Integer> doneIdList = new LinkedList<>();
 
     public Desk(Context context, GameView gv) {
         this.context = context;
@@ -138,6 +140,8 @@ public class Desk {
     }
 
     private boolean judgeBeimen(Player lastPlayer) {
+        if (doneIdList.contains(lastPlayer.playerId))
+            return false;
         boolean res = true;
         for (int i : lastPlayer.cards)
             res &= i < 4;
@@ -220,25 +224,32 @@ public class Desk {
     }
 
     private void checkGameOver() {
-        for (int k = 0; k < 3; k++) {
-            if (players[k].cards.length == 0) {
-                op = 1;
-                winId = k;
-                calculateResult();
-                return;
-            }
-        }
-        if (biesanMode) {
-            for (int i : beimenPlayerIds)
-                if (i == boss) {
-                    op = 1;
-                    if (i == 2)
-                        winId = 0;
-                    else
-                        winId = i + 1;
-                    calculateResult();
-                    return;
-                }
+//        for (int k = 0; k < 3; k++) {
+//            if (players[k].cards.length == 0) {
+//                op = 1;
+//                winId = k;
+//                calculateResult();
+//                return;
+//            }
+//        }
+//        if (biesanMode) {
+//            for (int i : beimenPlayerIds)
+//                if (i == boss) {
+//                    op = 1;
+//                    if (i == 2)
+//                        winId = 0;
+//                    else
+//                        winId = i + 1;
+//                    calculateResult();
+//                    return;
+//                }
+//        }
+        if (doneIdList.size() + beimenPlayerIds.size() == 2) {
+            doneIdList.add(currentId);
+            op = 1;
+            winId = doneIdList.get(0);
+            calculateResult();
+            return;
         }
 
         if (biesanMode && beimenPlayerIds.contains(currentId)) {
@@ -250,17 +261,21 @@ public class Desk {
 //        	nextPerson();
             beimenNext();
         	return;
-		}
+		} else if (doneIdList.contains(currentId)) {
+            zoukeNext();
+            return;
+        }
 
         if (judgeSan()) {
             CardsHolder tempcard = players[currentId].chupaiSan(cardsOnDesktop);
-            if (tempcard != null) {
+//            if (tempcard != null) {
                 cardsOnDesktop = tempcard;
                 cardsOnDesktop.playSound();
+                doneIdList.add(currentId);
                 nextPerson();
-            } else {
-                buyao();
-            }
+//            } else {
+//                buyao();
+//            }
         } else if (currentId == 1 || currentId == 2) {
 			if (timeLimite <= 300 && timeLimite >= 0) {
 				CardsHolder tempcard = players[currentId].chupaiAI(cardsOnDesktop);
@@ -338,9 +353,18 @@ public class Desk {
         Log.i("BoYaDDZ", playerId + " kaidian");
     }
 
+    public boolean queryDian(int playerId) {
+        for (DianReport report : dianReportList) {
+            if (report.id == playerId)
+                return report.dian;
+        }
+        throw new IllegalStateException("DianReport isn't existing for player "
+                + playerId + ", which is impossible.");
+    }
+
     public void init() {
-        allCards = new int[54];
-        playerCards = new int[3][17];
+        allCards = new int[162];
+        playerCards = new int[3][54];
         threeCards = new int[3];
         winId = -1;
         currentScore = 3;
@@ -355,8 +379,29 @@ public class Desk {
             canPass[i] = false;
         }
         for (int i = 0; i < allCards.length; i++) {
-            allCards[i] = i;
+            if (i >= 108)
+                allCards[i] = i - 108;
+            else if (i >= 54)
+                allCards[i] = i - 54;
+            else
+                allCards[i] = i;
         }
+        ArrayUtils.Closure<Integer> cl = new ArrayUtils.Closure<Integer>() {
+            int[] tmp = ArrayUtils.copy(allCards);
+            int count = 0;
+
+            @Override
+            public void execute(int index, Integer item) {
+                if (count == 9)
+                    return;
+                if (CardsManager.getCardNumber(item) == 3) {
+                    tmp = ArrayUtils.remove(tmp, index - count);
+                    count++;
+                }
+            }
+        }
+        ArrayUtils.forAllDo(allCards, cl);
+        allCards = cl.tmp;
         CardsManager.shuffle(allCards);
         fapai(allCards);
         chooseBoss();
@@ -378,9 +423,15 @@ public class Desk {
         for (int i = 0; i < 51; i++) {
             playerCards[i / 17][i % 17] = cards[i];
         }
-        threeCards[0] = cards[51];
-        threeCards[1] = cards[52];
-        threeCards[2] = cards[53];
+        for (int i = 51; i < 102; i++) {
+            playerCards[(i - 54) / 17][(i - 54) % 17 + 17] = cards[i];
+        }
+        for (int i = 102; i < 153; i++) {
+            playerCards[(i - 102) / 17][(i - 102) % 17 + 34] = cards[i];
+        }
+        threeCards[0] = cards[159];
+        threeCards[1] = cards[160];
+        threeCards[2] = cards[161];
     }
 
     private void maisan() {
@@ -528,6 +579,21 @@ public class Desk {
             jingongSingleFor(report.beimenId, report.menId);
         }
         menReportList.clear();
+        if (doneIdList.isEmpty() && beimenPlayerIds.isEmpty())
+            return;
+        gongText = "等待玩家进落贡";
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (beimenPlayerIds.isEmpty()) {
+            jingongSingleFor(doneIdList.get(doneIdList.size() - 1), doneIdList.get(0));
+        } else {
+            jingongSingleFor(beimenPlayerIds.get(0), doneIdList.get(0));
+        }
+        beimenPlayerIds.clear();
+        doneIdList.clear();
     }
 
     private void jingongSingleFor(int srcId, int destId) {
@@ -554,13 +620,13 @@ public class Desk {
 
     private void chooseBoss() {
         currentId = boss;
-        int[] diZhuCards = new int[20];
-        for (int i = 0; i < 17; i++) {
+        int[] diZhuCards = new int[playerCards[boss].length];
+        for (int i = 0; i < playerCards[boss].length - 3; i++) {
             diZhuCards[i] = playerCards[boss][i];
         }
-        diZhuCards[17] = threeCards[0];
-        diZhuCards[18] = threeCards[1];
-        diZhuCards[19] = threeCards[2];
+        diZhuCards[playerCards[boss].length - 3] = threeCards[0];
+        diZhuCards[playerCards[boss].length - 2] = threeCards[1];
+        diZhuCards[playerCards[boss].length - 1] = threeCards[2];
         playerCards[boss] = diZhuCards;
     }
 
@@ -569,14 +635,16 @@ public class Desk {
         canPass[currentId] = true;
         nextPerson();
         if (cardsOnDesktop != null && currentId == cardsOnDesktop.playerId) {
-            switch (cardsOnDesktop.cardsType) {
-                case CardsType.danshun:
-                case CardsType.shuangshun:
-                case CardsType.sanshun:
-                case CardsType.feiji:
-                case CardsType.sidaier:
-                    players[currentId].dianFlag = true;
-            }
+//            switch (cardsOnDesktop.cardsType) {
+//                case CardsType.danshun:
+//                case CardsType.shuangshun:
+//                case CardsType.sanshun:
+//                case CardsType.feiji:
+//                case CardsType.sidaier:
+//                    players[currentId].dianFlag = true;
+//            }
+            if (GJCardsAnalyzer.judgePureGouji(cardsOnDesktop.cards))
+                players[currentId].dianFlag = true;
             currentCircle = 0;
             cardsOnDesktop = null;
             players[currentId].latestCards = null;
@@ -584,11 +652,25 @@ public class Desk {
         SoundManager.playGuopaiSound();
     }
 
+    private void zoukeNext() {
+        beimenNext();
+    }
+
     private void beimenNext() {
 //        players[currentId].latestCards = null;
         canPass[currentId] = true;
         nextPerson();
         if (cardsOnDesktop != null && currentId == cardsOnDesktop.playerId) {
+//            switch (cardsOnDesktop.cardsType) {
+//                case CardsType.danshun:
+//                case CardsType.shuangshun:
+//                case CardsType.sanshun:
+//                case CardsType.feiji:
+//                case CardsType.sidaier:
+//                    players[currentId].dianFlag = true;
+//            }
+            if (GJCardsAnalyzer.judgePureGouji(cardsOnDesktop.cards))
+                players[currentId].dianFlag = true;
             currentCircle = 0;
             cardsOnDesktop = null;
             players[currentId].latestCards = null;
@@ -596,17 +678,25 @@ public class Desk {
     }
 
     private void nextPerson() {
-        switch (currentId) {
-            case 0:
-                currentId = 2;
-                break;
-            case 1:
-                currentId = 0;
-                break;
-            case 2:
-                currentId = 1;
-                break;
-        }
+        if (doneIdList.size() + beimenPlayerIds.size() == 3)
+            return;
+        Function<Integer, Integer> getNext = (m) -> {
+            switch (m) {
+                case 0:
+                    return 2;
+                case 1:
+                    return 0;
+                case 2:
+                    return 1;
+                default:
+                    throw new IllegalArgumentException("Player ID is invalid");
+            }
+        };
+        int id = currentId;
+        do {
+            id = getNext.apply(id);
+        } while (doneIdList.contains(id) || beimenPlayerIds.contains(id));
+        currentId = id;
         currentCircle++;
         timeLimite = 300;
     }
@@ -670,9 +760,17 @@ public class Desk {
         }
 
         if (biesanMode) {
+            int m = 2;
         	for (int i : beimenPlayerIds) {
         		paintBeimen(canvas, i);
+        		paintDoneOrder(canvas, i, m);
+        		m--;
 			}
+        	m = 0;
+            for (int i : doneIdList) {
+                paintDoneOrder(canvas, i, m);
+                m++;
+            }
 		}
     }
 
@@ -701,10 +799,10 @@ public class Desk {
 
     private void paintBeimen(Canvas canvas, int id) {
         Paint paint = new Paint();
-        paint.setColor(Color.BLUE);
+        paint.setColor(Color.GRAY);
         paint.setTextSize((int) (16 * MainActivity.SCALE_HORIAONTAL));
-        canvas.drawText("被闷", (int) (passPosition[id][0] * MainActivity.SCALE_HORIAONTAL),
-                (int) (passPosition[id][1] * MainActivity.SCALE_VERTICAL), paint);
+        canvas.drawText("闷", (int) (iconPosition[id][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (iconPosition[id][1] * MainActivity.SCALE_VERTICAL), paint);
     }
 
     private void paintPass(Canvas canvas, int id) {
@@ -713,7 +811,25 @@ public class Desk {
         paint.setTextSize((int) (16 * MainActivity.SCALE_HORIAONTAL));
         canvas.drawText("过牌", (int) (passPosition[id][0] * MainActivity.SCALE_HORIAONTAL),
                 (int) (passPosition[id][1] * MainActivity.SCALE_VERTICAL), paint);
+    }
 
+    private void paintDoneOrder(Canvas canvas, int id, int doneOrder) {
+        String str;
+        switch (doneOrder) {
+            case 0:
+                str = "头科";
+                break;
+            case 1:
+                str = "二科";
+                break;
+            default:
+                str = "三科";
+        }
+        Paint paint = new Paint();
+        paint.setColor(Color.BLUE);
+        paint.setTextSize((int) (16 * MainActivity.SCALE_HORIAONTAL));
+        canvas.drawText(str, (int) (passPosition[id][0] * MainActivity.SCALE_HORIAONTAL),
+                (int) (passPosition[id][1] * MainActivity.SCALE_VERTICAL), paint);
     }
 
     private void paintIconAndScore(Canvas canvas) {
@@ -836,7 +952,6 @@ public class Desk {
             return;
 
         if (op == 1) {
-            beimenPlayerIds.clear();
             shouldPaintButtons = false;
             gongCompleted = false;
             op = -1;

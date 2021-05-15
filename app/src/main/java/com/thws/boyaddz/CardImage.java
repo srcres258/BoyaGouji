@@ -17,4 +17,9 @@ public interface CardImage {
 			{R.drawable.spade_14, R.drawable.heart_14, R.drawable.club_14, R.drawable.diamond_14},
 			{R.drawable.spade_15, R.drawable.heart_15, R.drawable.club_15, R.drawable.diamond_15},
 			{R.drawable.little_joker, R.drawable.joker_big}};
+
+	int CARD_PRINT_HOFFSET = 10;
+	int CARD_PRINT_VOFFSET = 10;
+	int CARD_PRINT_WIDTH = 20;
+	int CARD_PRINT_HEIGHT = 30;
 }

@@ -51,18 +51,18 @@ public class CardsHolder {
 				col = CardsManager.getImageCol(cards[i]);
 				src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
 				des.set((int) (left * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top + i * 15) * MainActivity.SCALE_VERTICAL),
-						(int) ((left + 40) * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top + 60 + i * 15) * MainActivity.SCALE_VERTICAL));
+						(int) ((top + i * CardImage.CARD_PRINT_VOFFSET) * MainActivity.SCALE_VERTICAL),
+						(int) ((left + CardImage.CARD_PRINT_WIDTH) * MainActivity.SCALE_HORIAONTAL),
+						(int) ((top + CardImage.CARD_PRINT_HEIGHT + i * CardImage.CARD_PRINT_VOFFSET) * MainActivity.SCALE_VERTICAL));
 			}
 			else {
 				row = CardsManager.getImageRow(cards[i]);
 				col = CardsManager.getImageCol(cards[i]);
 				src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
-				des.set((int) ((left + i * 20) * MainActivity.SCALE_HORIAONTAL),
+				des.set((int) ((left + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL),
 						(int) (top * MainActivity.SCALE_VERTICAL),
-						(int) ((left + 40 + i * 20) * MainActivity.SCALE_HORIAONTAL),
-						(int) ((top + 60) * MainActivity.SCALE_VERTICAL));
+						(int) ((left + CardImage.CARD_PRINT_WIDTH + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL),
+						(int) ((top + CardImage.CARD_PRINT_HEIGHT) * MainActivity.SCALE_VERTICAL));
 			}
 			RectF rectF = new RectF(des);
 			canvas.drawRoundRect(rectF, 5, 5, paint);
@@ -74,5 +74,23 @@ public class CardsHolder {
 
 	public void playSound() {
 		SoundManager.playCardsTypeSound(cardsType);
+	}
+
+	public int getDCount() {
+		int r = 0;
+		for (int c : cards) {
+			if (CardsManager.getCardNumber(c) == 17)
+				r++;
+		}
+		return r;
+	}
+
+	public int getXCount() {
+		int r = 0;
+		for (int c : cards) {
+			if (CardsManager.getCardNumber(c) == 16)
+				r++;
+		}
+		return r;
 	}
 }

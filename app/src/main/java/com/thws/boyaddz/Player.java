@@ -14,7 +14,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 
 import com.blankj.utilcode.util.ArrayUtils;
-import com.blankj.utilcode.util.ToastUtils;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -156,9 +155,9 @@ public class Player {
 					}
 					dataLock.unlock();
 					src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
-					des.set((int) ((left + i * 15) * MainActivity.SCALE_HORIAONTAL),
+					des.set((int) ((left + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL),
 							(int) ((top - select) * MainActivity.SCALE_VERTICAL),
-							(int) ((left + 40 + i * 15) * MainActivity.SCALE_HORIAONTAL), (int) ((top
+							(int) ((left + 40 + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL), (int) ((top
 									- select + 60) * MainActivity.SCALE_VERTICAL));
 					RectF rectF = new RectF(des);
 					canvas.drawRoundRect(rectF, 5, 5, paint);
@@ -207,9 +206,9 @@ public class Player {
 				if (paintDirection == CardsType.direction_Vertical) {
 					src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
 					des.set((int) (left * MainActivity.SCALE_HORIAONTAL),
-							(int) ((top - 40 + i * 15) * MainActivity.SCALE_VERTICAL),
-							(int) ((left + 40) * MainActivity.SCALE_HORIAONTAL),
-							(int) ((top + 20 + i * 15) * MainActivity.SCALE_VERTICAL));
+							(int) ((top - 40 + i * CardImage.CARD_PRINT_VOFFSET) * MainActivity.SCALE_VERTICAL),
+							(int) ((left + CardImage.CARD_PRINT_WIDTH) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top - CardImage.CARD_PRINT_HEIGHT + 20 + i * CardImage.CARD_PRINT_VOFFSET) * MainActivity.SCALE_VERTICAL));
 					RectF rectF = new RectF(des);
 					canvas.drawRoundRect(rectF, 5, 5, paint);
 					canvas.drawBitmap(cardImage, src, des, paint);
@@ -217,10 +216,10 @@ public class Player {
 				}
 				else {
 					src.set(0, 0, cardImage.getWidth(), cardImage.getHeight());
-					des.set((int) ((left + 40 + i * 20) * MainActivity.SCALE_HORIAONTAL),
+					des.set((int) ((left + 40 + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL),
 							(int) (top * MainActivity.SCALE_VERTICAL),
-							(int) ((left + 80 + i * 20) * MainActivity.SCALE_HORIAONTAL),
-							(int) ((top + 60) * MainActivity.SCALE_VERTICAL));
+							(int) ((left + 40 + CardImage.CARD_PRINT_WIDTH + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((top + CardImage.CARD_PRINT_HEIGHT) * MainActivity.SCALE_VERTICAL));
 					RectF rectF = new RectF(des);
 					canvas.drawRoundRect(rectF, 5, 5, paint);
 					canvas.drawBitmap(cardImage, src, des, paint);
@@ -230,6 +229,12 @@ public class Player {
 		} finally {
 			dataLock.unlock();
 		}
+	}
+
+	private boolean has4() {
+		GJPlayerCardsAnalyzer ana = GJPlayerCardsAnalyzer.obtain();
+		ana.setPokes(cards);
+		return ana.getCountOfType(4) > 0;
 	}
 
 	private int[] outCardDian() {
@@ -269,7 +274,7 @@ public class Player {
 		int[] pokeWanted = null;
 
 		if (card == null) {
-			if (dianFlag || judgeQidian())
+			if (has4() && (dianFlag || judgeQidian()))
 				pokeWanted = outCardDian();
 			else
 				pokeWanted = CardsManager.outCardByItsself(cards, last, next);
@@ -315,8 +320,14 @@ public class Player {
 	}
 
 	public CardsHolder chupaiSan(CardsHolder card) {
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		CardsHolder ret = new CardsHolder(cards, playerId, context);
 		cards = new int[0];
+		latestCards = ret;
 		return ret;
 	}
 
@@ -361,9 +372,10 @@ public class Player {
 		} finally {
 			dataLock.unlock();
 		}
-		int cardType = CardsManager.getType(chupaiPokes);
-		System.out.println("cardType:" + cardType);
-		if (cardType == CardsType.error) {
+//		int cardType = CardsManager.getType(chupaiPokes);
+//		System.out.println("cardType:" + cardType);
+		boolean correct = CardsManager.isCardsCorrect(chupaiPokes);
+		if (!correct) {
 			if (chupaiPokes.length != 0) {
 				MainActivity.handler.sendEmptyMessage(MainActivity.WRONG_CARD);
 			}
@@ -437,7 +449,7 @@ public class Player {
 				// �ж��������Ʊ�ѡ�У����ñ�־
 				if (i != cards.length - 1) {
 					if (CardsManager.inRect(x, y,
-							(int) ((left + i * 15) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((left + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL),
 							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
 							(int) (20 * MainActivity.SCALE_HORIAONTAL),
 							(int) (60 * MainActivity.SCALE_VERTICAL))) {
@@ -446,7 +458,7 @@ public class Player {
 					}
 				} else {
 					if (CardsManager.inRect(x, y,
-							(int) ((left + i * 15) * MainActivity.SCALE_HORIAONTAL),
+							(int) ((left + i * CardImage.CARD_PRINT_HOFFSET) * MainActivity.SCALE_HORIAONTAL),
 							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
 							(int) (40 * MainActivity.SCALE_HORIAONTAL),
 							(int) (60 * MainActivity.SCALE_VERTICAL))) {
