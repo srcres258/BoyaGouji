@@ -74,11 +74,20 @@ public class Desk {
     private ArrayList<Integer> beimenPlayerIds = new ArrayList<>();
     private ReentrantLock dataLock = new ReentrantLock();
     private boolean gongCompleted = false;
+
     private boolean shouldPaintButtons = false;
     private LinkedList<DianReport> dianReportList = new LinkedList<>();
     private LinkedList<MenReport> menReportList = new LinkedList<>();
     private CharSequence gongText = "";
     private LinkedList<Integer> doneIdList = new LinkedList<>();
+
+    public boolean isShouldPaintButtons() {
+        return shouldPaintButtons;
+    }
+
+    public void setShouldPaintButtons(boolean shouldPaintButtons) {
+        this.shouldPaintButtons = shouldPaintButtons;
+    }
 
     public Desk(Context context, GameView gv) {
         this.context = context;
@@ -272,6 +281,7 @@ public class Desk {
                 cardsOnDesktop = tempcard;
                 cardsOnDesktop.playSound();
                 doneIdList.add(currentId);
+                SoundManager.playDoneSound(doneIdList.size() <= 1);
                 nextPerson();
 //            } else {
 //                buyao();
@@ -288,6 +298,7 @@ public class Desk {
                         menReportList.add(report);
                         submitMenAnimation(currentId, cardsOnDesktop.playerId);
                         SoundManager.playMenSound();
+                        SoundManager.playDoneSound(false);
                     }
 					cardsOnDesktop = tempcard;
 					cardsOnDesktop.playSound();
@@ -316,6 +327,7 @@ public class Desk {
                             menReportList.add(report);
                             submitMenAnimation(currentId, cardsOnDesktop.playerId);
                             SoundManager.playMenSound();
+                            SoundManager.playDoneSound(false);
                         }
                         cardsOnDesktop = card;
                         cardsOnDesktop.playSound();
@@ -430,9 +442,12 @@ public class Desk {
         for (int i = 102; i < 153; i++) {
             playerCards[(i - 102) / 17][(i - 102) % 17 + 34] = cards[i];
         }
-        threeCards[0] = cards[159];
-        threeCards[1] = cards[160];
-        threeCards[2] = cards[161];
+//        threeCards[0] = cards[159];
+//        threeCards[1] = cards[160];
+//        threeCards[2] = cards[161];
+        threeCards[0] = cards[150];
+        threeCards[1] = cards[151];
+        threeCards[2] = cards[152];
     }
 
     private void maisan() {

@@ -320,6 +320,7 @@ public class Player {
 	}
 
 	public CardsHolder chupaiSan(CardsHolder card) {
+		desk.setShouldPaintButtons(false);
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
@@ -328,6 +329,7 @@ public class Player {
 		CardsHolder ret = new CardsHolder(cards, playerId, context);
 		cards = new int[0];
 		latestCards = ret;
+		desk.setShouldPaintButtons(true);
 		return ret;
 	}
 
