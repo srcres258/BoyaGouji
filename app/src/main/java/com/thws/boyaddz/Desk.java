@@ -19,6 +19,7 @@ import com.blankj.utilcode.util.ArrayUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
@@ -62,7 +63,7 @@ public class Desk {
     private int[][] playerCardsPosition = ArrayUtils.copy(playerLatestCardsPosition);
     private int[][] scorePosition = {{70, 290}, {340, 90}, {340, 30}, {180, 15}, {70, 30}, {70, 90}};
     private int[][] iconPosition = {{30, 270}, {410, 100}, {410, 40}, {120, 20}, {30, 40}, {30, 100}};
-    private String[] playerNicknames = {"印尼宽带值得信赖", "孙笑川258", "饮茶先啦", "伏拉夫爱中国",
+    private String[] playerNicknames = {"需要装宽带吗？", "孙笑川258", "饮茶先啦", "让我康康",
             "两只老虎爱够级", "cheems"};
     private Bitmap[] playerAvatars = new Bitmap[6];
     private int buttonPosition_X = 240;
@@ -136,6 +137,17 @@ public class Desk {
             }
         }
         playerCardsPosition[0] = new int[] {30, 210};
+        // Random sort
+        Random rand = new Random();
+        for (int i = playerAvatars.length; i > 0; i--) {
+            int j = rand.nextInt(i);
+            Bitmap tmp0 = playerAvatars[i - 1];
+            playerAvatars[i - 1] = playerAvatars[j];
+            playerAvatars[j] = tmp0;
+            String tmp1 = playerNicknames[i - 1];
+            playerNicknames[i - 1] = playerNicknames[j];
+            playerNicknames[j] = tmp1;
+        }
     }
 
     public Lock getDataLock() {
@@ -165,16 +177,20 @@ public class Desk {
     }
 
     public void controlPaint(Canvas canvas) {
-        switch (op) {
-            case -1:
-                break;
-            case 0:
-                paintGaming(canvas);
-                break;
-            case 1:
-                paintResult(canvas);
-                break;
+        try {
+            switch (op) {
+                case -1:
+                    break;
+                case 0:
+                    paintGaming(canvas);
+                    break;
+                case 1:
+                    paintResult(canvas);
+                    break;
 
+            }
+        } catch (RuntimeException e) {
+            e.printStackTrace();
         }
     }
 
@@ -235,38 +251,101 @@ public class Desk {
         gv.waitForAnimation(anim);
     }
 
+//    private void calculateResult() {
+//        boolean pingju = false;
+//        if (boss == winId) {
+//            for (int i = 0; i < 3; i++) {
+//                if (i == boss) {
+//                    result[i] = currentScore * multiple * 2;
+//                    scores[i] += currentScore * multiple * 2;
+//                } else {
+//                    result[i] = -currentScore * multiple;
+//                    scores[i] -= currentScore * multiple;
+//                }
+//            }
+//        } else {
+//            for (int i = 0; i < 3; i++) {
+//                if (beimenPlayerIds.contains(1) || beimenPlayerIds.contains(2)) {
+//                    pingju = true;
+//                    result[i] = 0;
+//                } else if (i != boss) {
+//                    result[i] = currentScore * multiple;
+//                    scores[i] += currentScore * multiple;
+//                } else {
+//                    result[i] = -currentScore * multiple * 2;
+//                    scores[i] -= currentScore * multiple * 2;
+//                }
+//            }
+//        }
+//        if (pingju)
+//            SoundManager.playVictorySound();
+//        else if (winId == 0)
+//            SoundManager.playVictorySound();
+//        else
+//            SoundManager.playFailureSound();
+//    }
+
     private void calculateResult() {
+        int[] team0 = {0, 2, 4};
+        int[] team1 = {1, 3, 5};
         boolean pingju = false;
-        if (boss == winId) {
-            for (int i = 0; i < 3; i++) {
-                if (i == boss) {
-                    result[i] = currentScore * multiple * 2;
-                    scores[i] += currentScore * multiple * 2;
-                } else {
-                    result[i] = -currentScore * multiple;
-                    scores[i] -= currentScore * multiple;
-                }
+        int[] order = new int[6];
+        int i = 5;
+        for (int id : beimenPlayerIds) {
+            order[i] = id;
+            i--;
+        }
+        i = 0;
+        for (int id : doneIdList) {
+            order[i] = id;
+            i++;
+        }
+        if (ArrayUtils.contains(team0, order[0])) {
+            if (ArrayUtils.contains(team1, order[5])) {
+                winId = 0;
+            } else if (ArrayUtils.contains(team0, order[4])) {
+                winId = 1;
+            } else {
+                pingju = true;
             }
         } else {
-            for (int i = 0; i < 3; i++) {
-                if (beimenPlayerIds.contains(1) || beimenPlayerIds.contains(2)) {
-                    pingju = true;
-                    result[i] = 0;
-                } else if (i != boss) {
-                    result[i] = currentScore * multiple;
-                    scores[i] += currentScore * multiple;
-                } else {
-                    result[i] = -currentScore * multiple * 2;
-                    scores[i] -= currentScore * multiple * 2;
-                }
+            if (ArrayUtils.contains(team0, order[5])) {
+                winId = 1;
+            } else if (ArrayUtils.contains(team1, order[4])) {
+                winId = 0;
+            } else {
+                pingju = true;
             }
         }
         if (pingju)
-            SoundManager.playVictorySound();
+//            SoundManager.playVictorySound();
+            ; // TODO
         else if (winId == 0)
             SoundManager.playVictorySound();
         else
             SoundManager.playFailureSound();
+    }
+
+    private boolean judgeTeamEnd() {
+        int[] team0 = {0, 2, 4};
+        int[] team1 = {1, 3, 5};
+        boolean flag = true;
+        for (int id : team0) {
+            flag &= doneIdList.contains(id) || beimenPlayerIds.contains(id);
+        }
+        if (flag)
+            return true;
+        flag = true;
+        for (int id : team1) {
+            flag &= doneIdList.contains(id) || beimenPlayerIds.contains(id);
+        }
+        return flag;
+    }
+
+    private boolean judgeGameEnd() {
+        if (judgeTeamEnd())
+            return true;
+        return doneIdList.size() + beimenPlayerIds.size() == 5;
     }
 
     private void checkGameOver() {
@@ -290,7 +369,7 @@ public class Desk {
 //                    return;
 //                }
 //        }
-        if (doneIdList.size() + beimenPlayerIds.size() == 5) {
+        if (judgeGameEnd()) {
             doneIdList.add(currentId);
             op = 1;
             winId = doneIdList.get(0);
@@ -339,6 +418,39 @@ public class Desk {
                     shaoReportList.add(report);
                     players[burningId].shao = true;
                     players[burnedId].beishao = true;
+                }
+                if (judgeTeamEnd()) {
+                    Function<Integer, Integer> getNext = (m) -> {
+                        switch (m) {
+                            case 0:
+                                return 1;
+                            case 1:
+                                return 2;
+                            case 2:
+                                return 3;
+                            case 3:
+                                return 4;
+                            case 4:
+                                return 5;
+                            case 5:
+                                return 0;
+                            default:
+                                throw new IllegalArgumentException("Player ID is invalid");
+                        }
+                    };
+                    int id = currentId;
+                    id = getNext.apply(id);
+                    do {
+                        if (!doneIdList.contains(id) && !beimenPlayerIds.contains(id)) {
+                            doneIdList.add(id);
+                            onPlayerDone(id, false);
+                            SoundManager.playDoneSound(false);
+                        }
+                        id = getNext.apply(id);
+                    } while (id != currentId);
+                    calculateResult();
+                    op = 1;
+                    return;
                 }
                 nextPerson();
 //            } else {
@@ -443,6 +555,8 @@ public class Desk {
     }
 
     private boolean askForShaopai(int curId) {
+        if (sihuluanchan)
+            return false;
         if (!GJCardsAnalyzer.judgeGouji(cardsOnDesktop.cards))
             return false;
         if (players[curId].wutou)
@@ -1155,13 +1269,21 @@ public class Desk {
             return false;
         if (GJCardsAnalyzer.judgeGouji(cardsOnDesktop.cards)) {
             if ((players[playerId].getNext().dian || players[playerId].getNext().qidian)
-                    && !players[playerId].getNext().state.equals(Player.DiscardState.GUOPAI))
+                    && !(doneIdList.contains(players[playerId].getNext().playerId)
+                        || beimenPlayerIds.contains(players[playerId].getNext().playerId)
+                        || players[playerId].getNext().state.equals(Player.DiscardState.GUOPAI)))
                 return true;
             return (players[playerId].getNextMate().dian || players[playerId].getNextMate().qidian)
-                    && !players[playerId].getNextMate().state.equals(Player.DiscardState.GUOPAI);
+                    && !(doneIdList.contains(players[playerId].getNextMate().playerId)
+                        || beimenPlayerIds.contains(players[playerId].getNextMate().playerId)
+                        || players[playerId].getNextMate().state.equals(Player.DiscardState.GUOPAI));
         } else {
-            return !(players[playerId].getNext().state.equals(Player.DiscardState.GUOPAI)
-                    && players[playerId].getNextMate().state.equals(Player.DiscardState.GUOPAI));
+            return !((doneIdList.contains(players[playerId].getNext().playerId)
+                        || beimenPlayerIds.contains(players[playerId].getNext().playerId)
+                        || players[playerId].getNext().state.equals(Player.DiscardState.GUOPAI))
+                    && (doneIdList.contains(players[playerId].getNextMate().playerId)
+                        || beimenPlayerIds.contains(players[playerId].getNextMate().playerId)
+                        || players[playerId].getNextMate().state.equals(Player.DiscardState.GUOPAI)));
         }
     }
 
@@ -1390,7 +1512,7 @@ public class Desk {
                 e.printStackTrace();
             }
         }
-        if (players[id].cards.length < 10) {
+        if (!doneIdList.contains(id) && !beimenPlayerIds.contains(id) && players[id].cards.length < 10) {
             paint.setColor(Color.BLUE);
             canvas.drawText("少于十张",
                     (int) (iconPosition[id][0] * MainActivity.SCALE_HORIAONTAL),

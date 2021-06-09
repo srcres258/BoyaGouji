@@ -560,7 +560,7 @@ public class Player {
 							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
 							(int) (20 * MainActivity.SCALE_HORIAONTAL),
 							(int) (60 * MainActivity.SCALE_VERTICAL))) {
-						cardsFlag[i] = !cardsFlag[i];
+						onCardClicked(i);
 						break;
 					}
 				} else {
@@ -569,7 +569,7 @@ public class Player {
 							(int) ((top - (cardsFlag[i] ? 10 : 0)) * MainActivity.SCALE_VERTICAL),
 							(int) (40 * MainActivity.SCALE_HORIAONTAL),
 							(int) (60 * MainActivity.SCALE_VERTICAL))) {
-						cardsFlag[i] = !cardsFlag[i];
+						onCardClicked(i);
 						break;
 					}
 				}
@@ -577,6 +577,21 @@ public class Player {
 			}
 		} finally {
 			dataLock.unlock();
+		}
+	}
+
+	private void onCardClicked(int cardIndex) {
+		int card = cards[cardIndex];
+		if (CardsManager.getCardNumber(card) == 4) {
+			int i = 0;
+			for (int c : cards) {
+				if (CardsManager.getCardNumber(c) == 4) {
+					cardsFlag[i] = !cardsFlag[i];
+				}
+				i++;
+			}
+		} else {
+			cardsFlag[cardIndex] = !cardsFlag[cardIndex];
 		}
 	}
 
