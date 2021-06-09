@@ -62,6 +62,9 @@ public class Desk {
     private int[][] playerCardsPosition = ArrayUtils.copy(playerLatestCardsPosition);
     private int[][] scorePosition = {{70, 290}, {340, 90}, {340, 30}, {180, 15}, {70, 30}, {70, 90}};
     private int[][] iconPosition = {{30, 270}, {410, 100}, {410, 40}, {120, 20}, {30, 40}, {30, 100}};
+    private String[] playerNicknames = {"印尼宽带值得信赖", "孙笑川258", "饮茶先啦", "伏拉夫爱中国",
+            "两只老虎爱够级", "cheems"};
+    private Bitmap[] playerAvatars = new Bitmap[6];
     private int buttonPosition_X = 240;
     private int buttonPosition_Y = 160;
     private boolean[] canPass = new boolean[6];
@@ -101,6 +104,7 @@ public class Desk {
     private LinkedList<MenReport> menReportList = new LinkedList<>();
     private CharSequence gongText = "";
     private LinkedList<Integer> doneIdList = new LinkedList<>();
+    private StringBuffer jingongLog = new StringBuffer();
 
     public boolean isShouldPaintButtons() {
         return shouldPaintButtons;
@@ -123,6 +127,14 @@ public class Desk {
         farmerImage = BitmapFactory.decodeResource(context.getResources(), R.drawable.icon_farmer);
         landlordImage = BitmapFactory.decodeResource(context.getResources(),
                 R.drawable.icon_landlord);
+        for (int i = 0; i < 6; i++) {
+            try {
+                Field f = R.drawable.class.getField("avatar" + i);
+                playerAvatars[i] = BitmapFactory.decodeResource(context.getResources(), (Integer) f.get(null));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new IllegalStateException(e);
+            }
+        }
         playerCardsPosition[0] = new int[] {30, 210};
     }
 
@@ -799,7 +811,7 @@ public class Desk {
         for (int i = 0; i < 6; i++) {
             if (dianReports[i]) {
                 if (!dianReports[players[i].getOpposite().playerId]) {
-                    jingongSingleFor(players[i].getOpposite().playerId, i);
+                    jingongSingleFor(players[i].getOpposite().playerId, i, "点贡");
                 }
             }
         }
@@ -816,7 +828,7 @@ public class Desk {
             e.printStackTrace();
         }
         for (ShaoReport report : shaoReportList) {
-            jingongSingleFor(report.beishaoId, report.shaoId);
+            jingongSingleFor(report.beishaoId, report.shaoId, "烧贡");
         }
         shaoReportList.clear();
         gongText = "等待玩家进闷贡";
@@ -826,7 +838,7 @@ public class Desk {
             e.printStackTrace();
         }
         for (MenReport report : menReportList) {
-            jingongSingleFor(report.beimenId, report.menId);
+            jingongSingleFor(report.beimenId, report.menId, "闷贡");
         }
         menReportList.clear();
         if (doneIdList.isEmpty() && beimenPlayerIds.isEmpty())
@@ -848,16 +860,24 @@ public class Desk {
             order[i] = id;
             i++;
         }
-        jingongSingleFor(order[5], order[0]);
-        jingongSingleFor(order[5], order[0]);
-        jingongSingleFor(order[4], order[1]);
+        jingongSingleFor(order[5], order[0], "落贡");
+        jingongSingleFor(order[5], order[0], "落贡");
+        jingongSingleFor(order[4], order[1], "落贡");
         beimenPlayerIds.clear();
         doneIdList.clear();
     }
 
-    private void jingongSingleFor(int srcId, int destId) {
+    private void jingongSingleFor(int srcId, int destId, String gongName) {
         Log.i("BoYaDDZ", "jingong: from " + srcId + " to " + destId);
         int c = playerCards[srcId][0];
+        if (CardsManager.getCardNumber(c) < 15) {
+            jingongLog.append(playerNicknames[srcId]);
+            jingongLog.append("无2无王，不再向");
+            jingongLog.append(playerNicknames[destId]);
+            jingongLog.append("进");
+            jingongLog.append(gongName);
+            jingongLog.append("\n");
+        }
         try {
             players[srcId].getDataLock().lock();
             playerCards[srcId] = ArrayUtils.remove(playerCards[srcId], 0);
@@ -1150,7 +1170,11 @@ public class Desk {
         paint.setTextSize((int) (16 * MainActivity.SCALE_VERTICAL));
         paint.setStyle(Style.FILL);
         paint.setColor(Color.RED);
-        canvas.drawText(gongText.toString(),
+        StringBuilder b = new StringBuilder();
+        b.append(gongText);
+        b.append("\n");
+        b.append(jingongLog);
+        canvas.drawText(b.toString(),
                 (int) (150 * MainActivity.SCALE_HORIAONTAL),
                 (int) (100 * MainActivity.SCALE_VERTICAL), paint);
     }
@@ -1235,51 +1259,73 @@ public class Desk {
         Rect src = new Rect();
         Rect dst = new Rect();
         for (int i = 0; i < 6; i++) {
-            if (boss == i) {
-                paint.setStyle(Style.STROKE);
-                paint.setColor(Color.BLACK);
-                paint.setStrokeWidth(1);
-                paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-                src.set(0, 0, landlordImage.getWidth(), landlordImage.getHeight());
-                dst.set((int) (iconPosition[i][0] * MainActivity.SCALE_HORIAONTAL),
-                        (int) (iconPosition[i][1] * MainActivity.SCALE_VERTICAL),
-                        (int) ((iconPosition[i][0] + 40) * MainActivity.SCALE_HORIAONTAL),
-                        (int) ((iconPosition[i][1] + 40) * MainActivity.SCALE_VERTICAL));
-                RectF rectF = new RectF(dst);
-                canvas.drawRoundRect(rectF, 5, 5, paint);
-                canvas.drawBitmap(landlordImage, src, dst, paint);
+//            if (boss == i) {
+//                paint.setStyle(Style.STROKE);
+//                paint.setColor(Color.BLACK);
+//                paint.setStrokeWidth(1);
+//                paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
+//                src.set(0, 0, playerAvatars[i].getWidth(), playerAvatars[i].getHeight());
+//                dst.set((int) (iconPosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+//                        (int) (iconPosition[i][1] * MainActivity.SCALE_VERTICAL),
+//                        (int) ((iconPosition[i][0] + 40) * MainActivity.SCALE_HORIAONTAL),
+//                        (int) ((iconPosition[i][1] + 40) * MainActivity.SCALE_VERTICAL));
+//                RectF rectF = new RectF(dst);
+//                canvas.drawRoundRect(rectF, 5, 5, paint);
+//                canvas.drawBitmap(playerAvatars[i], src, dst, paint);
+//
+//                paint.setStyle(Style.FILL);
+//                paint.setColor(Color.WHITE);
+//                canvas.drawText("玩家" + i,
+//                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+//                        (int) (scorePosition[i][1] * MainActivity.SCALE_VERTICAL), paint);
+//                canvas.drawText("积分" + scores[i],
+//                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+//                        (int) ((scorePosition[i][1] + 20) * MainActivity.SCALE_VERTICAL), paint);
+//            } else {
+//                paint.setStyle(Style.STROKE);
+//                paint.setColor(Color.BLACK);
+//                paint.setStrokeWidth(1);
+//                paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
+//                src.set(0, 0, playerAvatars[i].getWidth(), playerAvatars[i].getHeight());
+//                dst.set((int) (iconPosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+//                        (int) (iconPosition[i][1] * MainActivity.SCALE_VERTICAL),
+//                        (int) ((iconPosition[i][0] + 40) * MainActivity.SCALE_HORIAONTAL),
+//                        (int) ((iconPosition[i][1] + 40) * MainActivity.SCALE_VERTICAL));
+//                RectF rectF = new RectF(dst);
+//                canvas.drawRoundRect(rectF, 5, 5, paint);
+//                canvas.drawBitmap(playerAvatars[i], src, rectF, paint);
+//
+//                paint.setStyle(Style.FILL);
+//                paint.setColor(Color.WHITE);
+//                canvas.drawText("玩家" + i,
+//                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+//                        (int) (scorePosition[i][1] * MainActivity.SCALE_VERTICAL), paint);
+//                canvas.drawText("积分" + scores[i],
+//                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+//                        (int) ((scorePosition[i][1] + 20) * MainActivity.SCALE_VERTICAL), paint);
+//            }
+            paint.setStyle(Style.STROKE);
+            paint.setColor(Color.BLACK);
+            paint.setStrokeWidth(1);
+            paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
+            src.set(0, 0, playerAvatars[i].getWidth(), playerAvatars[i].getHeight());
+            dst.set((int) (iconPosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+                    (int) (iconPosition[i][1] * MainActivity.SCALE_VERTICAL),
+                    (int) ((iconPosition[i][0] + 40) * MainActivity.SCALE_HORIAONTAL),
+                    (int) ((iconPosition[i][1] + 40) * MainActivity.SCALE_VERTICAL));
+            RectF rectF = new RectF(dst);
+            canvas.drawRoundRect(rectF, 5, 5, paint);
+            canvas.drawBitmap(playerAvatars[i], src, dst, paint);
 
-                paint.setStyle(Style.FILL);
-                paint.setColor(Color.WHITE);
-                canvas.drawText("玩家" + i,
-                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
-                        (int) (scorePosition[i][1] * MainActivity.SCALE_VERTICAL), paint);
-                canvas.drawText("积分" + scores[i],
-                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
-                        (int) ((scorePosition[i][1] + 20) * MainActivity.SCALE_VERTICAL), paint);
-            } else {
-                paint.setStyle(Style.STROKE);
-                paint.setColor(Color.BLACK);
-                paint.setStrokeWidth(1);
-                paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-                src.set(0, 0, farmerImage.getWidth(), farmerImage.getHeight());
-                dst.set((int) (iconPosition[i][0] * MainActivity.SCALE_HORIAONTAL),
-                        (int) (iconPosition[i][1] * MainActivity.SCALE_VERTICAL),
-                        (int) ((iconPosition[i][0] + 40) * MainActivity.SCALE_HORIAONTAL),
-                        (int) ((iconPosition[i][1] + 40) * MainActivity.SCALE_VERTICAL));
-                RectF rectF = new RectF(dst);
-                canvas.drawRoundRect(rectF, 5, 5, paint);
-                canvas.drawBitmap(farmerImage, src, rectF, paint);
+            paint.setStyle(Style.FILL);
+            paint.setColor(Color.WHITE);
+            canvas.drawText(playerNicknames[i],
+                    (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+                    (int) (scorePosition[i][1] * MainActivity.SCALE_VERTICAL), paint);
+            canvas.drawText("积分" + scores[i],
+                    (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
+                    (int) ((scorePosition[i][1] + 20) * MainActivity.SCALE_VERTICAL), paint);
 
-                paint.setStyle(Style.FILL);
-                paint.setColor(Color.WHITE);
-                canvas.drawText("玩家" + i,
-                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
-                        (int) (scorePosition[i][1] * MainActivity.SCALE_VERTICAL), paint);
-                canvas.drawText("积分" + scores[i],
-                        (int) (scorePosition[i][0] * MainActivity.SCALE_HORIAONTAL),
-                        (int) ((scorePosition[i][1] + 20) * MainActivity.SCALE_VERTICAL), paint);
-            }
             paintPlayerStatus(canvas, i);
         }
 
@@ -1424,6 +1470,7 @@ public class Desk {
             shouldPaintButtons = false;
             gongCompleted = false;
             sihuluanchan = false;
+            jingongLog = new StringBuffer();
             op = -1;
         }
         players[0].onTuch(x, y);
