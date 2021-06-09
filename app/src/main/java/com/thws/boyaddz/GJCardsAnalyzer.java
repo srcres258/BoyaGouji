@@ -109,6 +109,8 @@ public class GJCardsAnalyzer {
             int cn = CardsManager.getCardNumber(c);
             if (cn == 17 || cn == 16)
                 continue;
+            if (cn == 4)
+                continue;
             if (cn <= baseType)
                 break;
             targetType = cn;

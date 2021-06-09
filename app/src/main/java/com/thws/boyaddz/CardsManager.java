@@ -623,6 +623,22 @@ public class CardsManager {
         return ana.getLargerCards(cards);
     }
 
+    public static int getCardFirstIndex(int[] cards, int cardNumber) {
+        for (int i = 0; i < cards.length; i++) {
+            if (getCardNumber(cards[i]) == cardNumber)
+                return i;
+        }
+        return -1;
+    }
+    public static int getCardsAmount(int[] cards, int cardNumber) {
+        int result = 0;
+        for (int i = 0; i < cards.length; i++) {
+            if (getCardNumber(cards[i]) == cardNumber)
+                result++;
+        }
+        return result;
+    }
+
     public static int[] findBigerCards(CardsHolder card, int cards[], int must) {
         try {
             int[] cardPokes = card.cards;

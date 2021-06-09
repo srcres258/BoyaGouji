@@ -12,15 +12,24 @@ import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 
 import com.blankj.utilcode.util.ArrayUtils;
 
+import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Player {
+
+	public enum DiscardState {
+		CHUPAI,
+		GUOPAI,
+		RANGPAI
+	}
 
 	int[] cards;
 
@@ -47,9 +56,40 @@ public class Player {
 	Bitmap cardImage;
 
 	boolean dianFlag = false;
+	boolean dian = false;
+	boolean qidian = false;
+	boolean shao = false;
+	boolean beishao = false;
+	boolean men = false;
+	boolean beimen = false;
+	boolean wutou = false;
+	DiscardState state = DiscardState.CHUPAI;
 
+	public Player getOpposite() {
+		return opposite;
+	}
+
+	public Player getLastMate() {
+		return lastMate;
+	}
+
+	public Player getLast() {
+		return last;
+	}
+
+	public Player getNext() {
+		return next;
+	}
+
+	public Player getNextMate() {
+		return nextMate;
+	}
+
+	private Player opposite;
+	private Player lastMate;
 	private Player last;
 	private Player next;
+	private Player nextMate;
 
 	private ReentrantLock dataLock = new ReentrantLock();
 
@@ -72,9 +112,12 @@ public class Player {
 		this.top = top;
 	}
 
-	public void setLastAndNext(Player last, Player next) {
+	public void setRelations(Player last, Player next, Player opposite, Player lastMate, Player nextMate) {
 		this.last = last;
 		this.next = next;
+		this.opposite = opposite;
+		this.lastMate = lastMate;
+		this.nextMate = nextMate;
 	}
 
 	public void setCards(int[] cards) {
@@ -100,37 +143,37 @@ public class Player {
 		int row;
 		int col;
 
-		if (paintDirection == CardsType.direction_Vertical) {
-			Paint paint = new Paint();
-			paint.setStyle(Style.STROKE);
-			paint.setColor(Color.BLACK);
-			paint.setStrokeWidth(1);
-			paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-			Bitmap backImage = BitmapFactory.decodeResource(context.getResources(),
-					R.drawable.card_bg);
-
-			src.set(0, 0, backImage.getWidth(), backImage.getHeight());
-			des.set((int) (left * MainActivity.SCALE_HORIAONTAL),
-					(int) (top * MainActivity.SCALE_VERTICAL),
-					(int) ((left + 40) * MainActivity.SCALE_HORIAONTAL),
-					(int) ((top + 60) * MainActivity.SCALE_VERTICAL));
-			RectF rectF = new RectF(des);
-			canvas.drawRoundRect(rectF, 5, 5, paint);
-			canvas.drawBitmap(backImage, src, des, paint);
-
-			paint.setStyle(Style.FILL);
-			paint.setColor(Color.WHITE);
-			paint.setTextSize((int) (20 * MainActivity.SCALE_HORIAONTAL));
-			try {
-				dataLock.lock();
-//				if (!desk.biesanMode)
-					canvas.drawText("" + cards.length, (int) (left * MainActivity.SCALE_HORIAONTAL),
-							(int) ((top + 80) * MainActivity.SCALE_VERTICAL), paint);
-			} finally {
-				dataLock.unlock();
-			}
-		}
-		else {
+//		if (paintDirection == CardsType.direction_Vertical) {
+		if (playerId != Desk.boss) {
+//			Paint paint = new Paint();
+//			paint.setStyle(Style.STROKE);
+//			paint.setColor(Color.BLACK);
+//			paint.setStrokeWidth(1);
+//			paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
+//			Bitmap backImage = BitmapFactory.decodeResource(context.getResources(),
+//					R.drawable.card_bg);
+//
+//			src.set(0, 0, backImage.getWidth(), backImage.getHeight());
+//			des.set((int) (left * MainActivity.SCALE_HORIAONTAL),
+//					(int) (top * MainActivity.SCALE_VERTICAL),
+//					(int) ((left + 40) * MainActivity.SCALE_HORIAONTAL),
+//					(int) ((top + 60) * MainActivity.SCALE_VERTICAL));
+//			RectF rectF = new RectF(des);
+//			canvas.drawRoundRect(rectF, 5, 5, paint);
+//			canvas.drawBitmap(backImage, src, des, paint);
+//
+//			paint.setStyle(Style.FILL);
+//			paint.setColor(Color.WHITE);
+//			paint.setTextSize((int) (20 * MainActivity.SCALE_HORIAONTAL));
+//			try {
+//				dataLock.lock();
+////				if (!desk.biesanMode)
+//					canvas.drawText("" + cards.length, (int) (left * MainActivity.SCALE_HORIAONTAL),
+//							(int) ((top + 80) * MainActivity.SCALE_VERTICAL), paint);
+//			} finally {
+//				dataLock.unlock();
+//			}
+		} else {
 			Paint paint = new Paint();
 			paint.setStyle(Style.STROKE);
 			paint.setColor(Color.BLACK);
@@ -163,11 +206,12 @@ public class Player {
 					canvas.drawRoundRect(rectF, 5, 5, paint);
 					canvas.drawBitmap(cardImage, src, des, paint);
 				}
+			} catch (ArrayIndexOutOfBoundsException e) {
+				e.printStackTrace();
 			} finally {
 				dataLock.unlock();
 			}
 		}
-
 	}
 	public void paintResultCards(Canvas canvas) {
 		// TODO Auto-generated method stub
@@ -237,6 +281,20 @@ public class Player {
 		return ana.getCountOfType(4) > 0;
 	}
 
+	private boolean hasPureGouji() {
+		if (CardsManager.getCardsAmount(cards, 14) >= 2)
+			return true;
+		if (CardsManager.getCardsAmount(cards, 13) >= 2)
+			return true;
+		if (CardsManager.getCardsAmount(cards, 12) >= 3)
+			return true;
+		if (CardsManager.getCardsAmount(cards, 11) >= 4)
+			return true;
+		if (CardsManager.getCardsAmount(cards, 10) >= 5)
+			return true;
+		return false;
+	}
+
 	private int[] outCardDian() {
 		try {
 			dataLock.lock();
@@ -252,6 +310,10 @@ public class Player {
 	}
 
 	private boolean judgeQidian() {
+		if (qidian)
+			return true;
+		if (!hasPureGouji())
+			return true;
 		try {
 			dataLock.lock();
 			for (int card : cards) {
@@ -310,8 +372,11 @@ public class Player {
 //		Desk.cardsOnDesktop = thiscard;
 		this.latestCards = thiscard;
 		for (int c : pokeWanted) {
-			if (CardsManager.getCardNumber(c) == 4 && dianFlag) {
-				desk.setDian(playerId);
+			if (CardsManager.getCardNumber(c) == 4) {
+				if (dianFlag)
+					desk.setDian(playerId);
+				else if (!qidian)
+					desk.setQidian(playerId);
 				break;
 			}
 		}
@@ -322,7 +387,7 @@ public class Player {
 	public CardsHolder chupaiSan(CardsHolder card) {
 		desk.setShouldPaintButtons(false);
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -435,13 +500,53 @@ public class Player {
 			}
 		}
 		for (int c : chupaiPokes) {
-			if (CardsManager.getCardNumber(c) == 4 && dianFlag) {
-				desk.setDian(playerId);
+			if (CardsManager.getCardNumber(c) == 4) {
+				if (dianFlag)
+					desk.setDian(playerId);
+				else if (!qidian)
+					desk.setQidian(playerId);
 				break;
 			}
 		}
 		dianFlag = false;
 		return newLatestCardsHolder;
+	}
+
+	private boolean shaopaiAvaliable(int[] cards) {
+		// TODO
+//		int dCount = 0, xCount = 0, moneyCount = 0;
+//		ArrayList<Integer> analyzed = new ArrayList<>();
+//		for (int card : cards) {
+//			if (CardsManager.getCardNumber(card) == 17)
+//				dCount++;
+//			else if (CardsManager.getCardNumber(card) == 16)
+//				xCount++;
+//			else if (CardsManager.getCardNumber(card) == 15)
+//				moneyCount++;
+//			else {
+//				if (analyzed.contains(CardsManager.getCardNumber(card)))
+//					continue;
+//				analyzed.add(CardsManager.getCardNumber(card));
+//				int amount = CardsManager.getCardsAmount(cards, card);
+//			}
+//		}
+		return true;
+	}
+
+	public boolean onAskingForShaopai(int[] cards) {
+		//
+		if (shaopaiAvaliable(cards)) {
+			if (playerId == 0) {
+				desk.shaopaiDecisionParkingThread = Thread.currentThread();
+				desk.shaopaiDecisionWaiting = true;
+//				desk.shouldPaintButtons = true;
+				LockSupport.park();
+				return desk.shaopaiDecisionResult;
+			} else {
+				return false;
+			}
+		}
+		return false;
 	}
 
 	public void onTuch(int x, int y) {

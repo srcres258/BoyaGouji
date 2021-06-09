@@ -33,13 +33,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 	Thread gameThread = new Thread() {
 		@Override
 		public void run() {
+			threadsRunning = true;
 			holder = getHolder();
-			while (threadFlag) {
-				try {
-					canvas = holder.lockCanvas();
-					doDraw(canvas);
-				} finally {
-					holder.unlockCanvasAndPost(canvas);
+			while (true) {
+				if (threadFlag) {
+					try {
+						canvas = holder.lockCanvas();
+						doDraw(canvas);
+					} finally {
+						holder.unlockCanvasAndPost(canvas);
+					}
 				}
 				try {
 					Thread.sleep(20);
@@ -47,22 +50,28 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 					e.printStackTrace();
 				}
 			}
+//			threadsRunning = false;
 		}
 
 	};
 	Thread gameLogicThread = new Thread() {
 		@Override
 		public void run() {
-			while (threadFlag) {
-				desk.gameLogic();
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+			threadsRunning = true;
+			while (true) {
+				if (threadFlag) {
+					desk.gameLogic();
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
 			}
+//			threadsRunning = false;
 		}
 	};
+	boolean threadsRunning = false;
 
 	public GameView(Context context) {
 		super(context);
@@ -146,21 +155,23 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, OnT
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		threadFlag = true;
-		gameThread.start();
-		gameLogicThread.start();
+		if (!threadsRunning) {
+			gameThread.start();
+			gameLogicThread.start();
+		}
 	}
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		threadFlag = false;
-		boolean retry = true;
-		while (retry) {
-			try {
-				gameThread.join();
-				retry = false;
-			} catch (InterruptedException e) {
-			}
-		}
+//		boolean retry = true;
+//		while (retry) {
+//			try {
+//				gameThread.join();
+//				retry = false;
+//			} catch (InterruptedException e) {
+//			}
+//		}
 	}
 
 	@Override
